@@ -22,20 +22,11 @@ program.command('did')
     id.close();
   });
 
-program.command('generate <type> <args>')
-  .description('Generate a request JWT of any type with args in json form')
-  .action(async (type, args) => {
+program.command('generate <type> <requestresponse> <args>')
+  .description('Generate a request or response JWT of any type with args in json form')
+  .action(async (type, requestresponse, args) => {
     const id = await init();
-    switch (type) {
-      case 'payment':
-        console.log(await id.getPaymentRequest(JSON.parse(args)));
-        break;
-      case 'authentication':
-        console.log(await id.getAuthenticationRequest(JSON.parse(args)));
-        break;
-      default:
-        console.log('request type not supported');
-    }
+    console.log(await id.generate(type, requestresponse, args));
     id.close();
   });
 

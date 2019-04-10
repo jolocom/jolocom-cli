@@ -17,10 +17,26 @@ const Controller = async (seed: any, password: string) => {
   } catch {
     interactions = {};
   }
+
   return {
     getDid: (): string => {
       return idw.did;
     },
+    clearInteractions: (): void => {
+      interactions = {};
+    },
+    generate: async (typ, reqresp, attrs) => {
+      try {
+        const token = await idw.create.interactionTokens[reqresp][typ](attrs);
+        if (reqresp === 'request') {
+          interactions[token.nonce];
+        }
+        return token.encode();
+      } catch {
+        return 'Error: malformed invokation'
+      }
+    },
+
     getAuthenticationRequest: async (callback_url: string) => {
       const req = await idw.create.interactionTokens.request.auth({callbackURL: callback_url}, password);
       interactions[req.nonce] = req;
