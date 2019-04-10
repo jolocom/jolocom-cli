@@ -7,6 +7,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "rm -rf dist && tsc -p ."
   },
+  "bin": {
+      "jolocom-cli": "dist/index.js"
+  },
   "author": "charles cunningham",
   "license": "ISC",
   "dependencies": {
