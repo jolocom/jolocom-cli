@@ -19,6 +19,7 @@ program.command('did')
   .action(async _ => {
     const id = program.params ? await init(program.params) : await init();
     console.log(id.getDid());
+    id.close();
   });
 
 program.command('generate <type> <args>')
@@ -35,6 +36,7 @@ program.command('generate <type> <args>')
       default:
         console.log('request type not supported');
     }
+    id.close();
   });
 
 program
@@ -43,6 +45,7 @@ program
   .action(async (response) => {
     const id = await init();
     console.log(await id.isInteractionResponseValid(response))
+    id.close();
   });
 
 program.parse(process.argv);

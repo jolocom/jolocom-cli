@@ -1,4 +1,6 @@
 import {JolocomLib} from 'jolocom-lib';
+import * as fs from 'fs';
+import * as os from 'os';
 
 const Controller = async (seed: any, password: string) => {
 
@@ -8,32 +10,40 @@ const Controller = async (seed: any, password: string) => {
     derivationPath: JolocomLib.KeyTypes.jolocomIdentityKey,
     encryptionPass: password
   })
-  const interactions = new Map();
-
+  var interactions: {};
+  const file = os.tmpdir() + '/jolocom/' + idw.did + '/interactions.json';
+  try {
+    interactions = JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch {
+    interactions = {};
+  }
   return {
     getDid: (): string => {
       return idw.did;
     },
     getAuthenticationRequest: async (callback_url: string) => {
       const req = await idw.create.interactionTokens.request.auth({callbackURL: callback_url}, password);
-      interactions.set(req.nonce, req);
+      interactions[req.nonce] = req;
       return req.encode();
     },
     getPaymentRequest: async (payment_details) => {
       const req = await idw.create.interactionTokens.request.payment(payment_details, password);
-      interactions.set(req.nonce, req);
+      interactions[req.nonce] = req;
       return req.encode();
     },
     isInteractionResponseValid: async response => {
       const resp = JolocomLib.parse.interactionToken.fromJWT(response);
-      const req = interactions.get(resp.nonce);
+      const req = interactions[resp.nonce];
       try {
         await idw.validateJWT(resp, req);
-        interactions.delete(resp.nonce);
+        delete interactions[resp.nonce];
         return true;
       } catch (err) {
         return false;
       }
+    },
+    close: () => {
+      fs.writeFileSync('interactons.json', JSON.stringify(interactions), 'utf8');
     }
   }
 };
