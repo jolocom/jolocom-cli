@@ -15,7 +15,7 @@ Example usage:
 `jolocom-cli did -p x,y`
 
 - generate an authentication request with callback URL http://www.google.com:
-`jolocom-cli generate authentication "{\\"callbackURL\\": \\"http://www.google.com\\"}" -p x,y`
+`jolocom-cli generate authentication "{\"callbackURL\": \"http://www.google.com\"}" -p x,y`
 
 - validate a response to the previous authentication request:
 `jolocom-cli validate <JWT> -p x,y`
