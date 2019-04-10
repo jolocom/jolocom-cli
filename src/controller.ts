@@ -11,9 +11,9 @@ const Controller = async (seed: any, password: string) => {
     encryptionPass: password
   })
   var interactions: {};
-  const file = os.tmpdir() + '/jolocom/' + idw.did + '/interactions.json';
+  const dir = __dirname + '/interactions/' + idw.did.slice(10, 30);
   try {
-    interactions = JSON.parse(fs.readFileSync(file, 'utf8'));
+    interactions = JSON.parse(fs.readFileSync(dir + '/interactions.json', 'utf8'));
   } catch {
     interactions = {};
   }
@@ -43,7 +43,12 @@ const Controller = async (seed: any, password: string) => {
       }
     },
     close: () => {
-      fs.writeFileSync('interactons.json', JSON.stringify(interactions), 'utf8');
+      try {
+        fs.writeFileSync(dir + '/interactions.json', JSON.stringify(interactions), 'utf8');
+      } catch {
+        fs.mkdirSync(dir, {recursive: true});
+        fs.writeFileSync(dir + '/interactions.json', JSON.stringify(interactions), 'utf8');
+      }
     }
   }
 };
