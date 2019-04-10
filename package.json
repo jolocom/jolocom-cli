@@ -2,7 +2,7 @@
   "name": "jolocom-cli",
   "version": "1.0.0",
   "description": "CLI interface for a Jolocom Self Sovereign Identity",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -11,5 +11,9 @@
   "dependencies": {
     "commander": "^2.20.0",
     "jolocom-lib": "^2.4.0"
+  },
+  "devDependencies": {
+    "ts-node": "^8.0.3",
+    "typescript": "^3.4.3"
   }
 }
