@@ -1,14 +1,14 @@
 {
   "name": "jolocom-cli",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "CLI interface for a Jolocom Self Sovereign Identity",
-  "main": "dist/index.js",
+  "main": "cli.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "rm -rf dist && tsc -p ."
   },
   "bin": {
-      "jolocom-cli": "dist/index.js"
+      "jolocom-cli": "cli.js"
   },
   "author": "charles cunningham",
   "license": "ISC",
