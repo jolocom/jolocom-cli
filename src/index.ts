@@ -24,8 +24,10 @@ program.command('did')
 
 program.command('generate <type> <reqresp> <attrs> [recieved]')
   .description('Generate a request or response JWT of any type with attributes in json form. For a response, the optional recieved param is the request')
-  .action(async (type, requestresponse, attrs, recieved?) => {
+  .action(async (type, requestresponse, attrs_string, recieved?) => {
     const id = program.params ? await init(program.params) : await init();
+    const attrs = JSON.parse(attrs_string);
+    console.log(attrs);
     switch (requestresponse) {
       case 'request':
         console.log(await id.generateRequest(type, attrs));

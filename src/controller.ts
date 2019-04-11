@@ -1,5 +1,22 @@
 import {JolocomLib} from 'jolocom-lib';
 import * as fs from 'fs';
+import { AuthRequestCreationArgs,
+         CredentialShareRequestCreationArgs,
+         CredentialShareResponseCreationArgs,
+         CredentialOfferRequestCreationArgs,
+         PaymentRequestCreationArgs,
+         CredentialOfferResponseCreationArgs,
+         PaymentResponseCreationArgs } from 'jolocom-lib/js/identityWallet/types';
+
+type ReqArgT = AuthRequestCreationArgs |
+  CredentialShareRequestCreationArgs |
+  CredentialOfferRequestCreationArgs |
+  PaymentRequestCreationArgs;
+
+type RespArgT = AuthRequestCreationArgs |
+  CredentialShareResponseCreationArgs |
+  CredentialOfferResponseCreationArgs |
+  PaymentResponseCreationArgs;
 
 const Controller = async (seed: any, password: string) => {
 
@@ -24,7 +41,7 @@ const Controller = async (seed: any, password: string) => {
     clearInteractions: (): void => {
       interactions = {};
     },
-    generateRequest: async (typ, attrs) => {
+    generateRequest: async (typ: string, attrs: ReqArgT): Promise<string> => {
       try {
         const token = await idw.create.interactionTokens.request[typ](attrs, password);
         interactions[token.nonce] = token;
@@ -33,7 +50,7 @@ const Controller = async (seed: any, password: string) => {
         return 'Error: Malformed Invokation: ' + error;
       }
     },
-    generateResponse: async (typ, attrs, recieved?) => {
+    generateResponse: async (typ: string, attrs: RespArgT, recieved?: string): Promise<string> => {
       try {
         const token = await idw.create.interactionTokens.response[typ](attrs, password, recieved);
         return token.encode();
