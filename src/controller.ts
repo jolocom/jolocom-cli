@@ -1,6 +1,5 @@
 import {JolocomLib} from 'jolocom-lib';
 import * as fs from 'fs';
-import * as os from 'os';
 
 const Controller = async (seed: any, password: string) => {
 
