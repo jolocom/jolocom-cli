@@ -4,6 +4,8 @@ Jolocom-cli is a cli tool to interact with a jolocom self-sovereign identity.
 ## Installation:
 Simply run `npm install -g jolocom-cli`
 
+Alternatively, for a local installation, run `npm run prepare` to transpile and then `node cli.js` in place of `jolocom-cli` for any command.
+
 ## Usage
 Usage information can be found with the -h flag.
 
