@@ -11,17 +11,31 @@ Example usage:
 - get the did of the local identity:
 `jolocom-cli did`
 
-- get the did of an identity created with seed x and password y (the seed should be a 64 digit hex integer):
-`jolocom-cli did -p x,y`
+- get the did of an identity created with seed b and password b (the seed should be a 64 digit hex integer):
+`jolocom-cli did -p a,b`
 
-- generate an authentication request with callback URL http://www.google.com:
-`jolocom-cli generate authentication "{\"callbackURL\": \"http://www.google.com\"}" -p x,y`
+- generate an authentication request with callback URL http://www.google.com using identity a,b:
+`jolocom-cli generate auth request "{\"callbackURL\": \"http://www.google.com\"}" -p a,b`
 
-- validate a response to the previous authentication request:
-`jolocom-cli validate <JWT> -p x,y`
+- generate an authentication response to the above request with identity c,d:
+`jolocom-cli generate auth response "{\"callbackURL\": \"http://www.google.com\"}" {requestJWT} -p c,d`
+
+- validate the authentication response generated above with a,b:
+`jolocom-cli validate <JWT> -p a,b`
+
+## Interaction Types and Attributes
+The interaction types consist of:
+- auth: Authentication
+- offer: Credential Offer
+- share: Credential Share
+- payment: Payment
+- issue: Credential Issuance (can only be a response)
+
+The Attributes these types require are all in JSON form and are specified in their [typings file](https://github.com/jolocom/jolocom-lib/blob/master/ts/interactionTokens/interactionTokens.types.ts)
 
 ## Notes
 - The generated requests are JWT encoded and signed.
 - Likewise, the validate command also expects an encoded and signed JWT as input.
 - The seed and password options are not required, however without them the tool will default to a single identity for every user.
 - In future, the tool will detect the presence of a secure hardware element to gather entropy from, making the default identity different for each machine.
+- Support for (signed) credential creation is planned for a future release
