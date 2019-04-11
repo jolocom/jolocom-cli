@@ -1,22 +1,6 @@
 import {JolocomLib} from 'jolocom-lib';
 import * as fs from 'fs';
-import { AuthRequestCreationArgs,
-         CredentialShareRequestCreationArgs,
-         CredentialShareResponseCreationArgs,
-         CredentialOfferRequestCreationArgs,
-         PaymentRequestCreationArgs,
-         CredentialOfferResponseCreationArgs,
-         PaymentResponseCreationArgs } from 'jolocom-lib/js/identityWallet/types';
-
-type ReqArgT = AuthRequestCreationArgs |
-  CredentialShareRequestCreationArgs |
-  CredentialOfferRequestCreationArgs |
-  PaymentRequestCreationArgs;
-
-type RespArgT = AuthRequestCreationArgs |
-  CredentialShareResponseCreationArgs |
-  CredentialOfferResponseCreationArgs |
-  PaymentResponseCreationArgs;
+import attrCheck from './validation';
 
 const Controller = async (seed: any, password: string) => {
 
@@ -43,7 +27,10 @@ const Controller = async (seed: any, password: string) => {
     clearInteractions: (): void => {
       interactions = {};
     },
-    generateRequest: async (typ: string, attrs: ReqArgT): Promise<string> => {
+    generateRequest: async (typ: string, attrs): Promise<string> => {
+      if (!attrCheck.request[typ](attrs)) {
+        return 'Error: Incorrect token attribute form for interaction type ' + typ;
+      }
       try {
         const token = await tokens.request[typ](attrs, password);
         interactions[token.nonce] = token;
@@ -52,7 +39,10 @@ const Controller = async (seed: any, password: string) => {
         return 'Error: Malformed Invokation: ' + error;
       }
     },
-    generateResponse: async (typ: string, attrs: RespArgT, recieved?: string): Promise<string> => {
+    generateResponse: async (typ: string, attrs, recieved?: string): Promise<string> => {
+      if (!attrCheck.response[typ](attrs)) {
+        return 'Error: Incorrect token attribute form for interaction type ' + typ;
+      }
       try {
         const token = await tokens.response[typ](attrs, password, recieved);
         return token.encode();
