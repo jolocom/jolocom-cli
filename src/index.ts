@@ -22,11 +22,20 @@ program.command('did')
     id.close();
   });
 
-program.command('generate <type> <requestresponse> <args>')
-  .description('Generate a request or response JWT of any type with args in json form')
-  .action(async (type, requestresponse, args) => {
-    const id = await init();
-    console.log(await id.generate(type, requestresponse, args));
+program.command('generate <type> <reqresp> <attrs> [recieved]')
+  .description('Generate a request or response JWT of any type with attributes in json form. For a response, the optional recieved param is the request')
+  .action(async (type, requestresponse, attrs, recieved?) => {
+    const id = program.params ? await init(program.params) : await init();
+    switch (requestresponse) {
+      case 'request':
+        console.log(await id.generateRequest(type, attrs));
+        break;
+      case 'response':
+        console.log(await id.generateResponse(type, attrs, recieved));
+        break;
+      default:
+        console.log('Parameter reqresp MUST be either request or response');
+    }
     id.close();
   });
 
@@ -34,7 +43,7 @@ program
   .command('validate <response>')
   .description('Validate a JWT given in response to an interaction request')
   .action(async (response) => {
-    const id = await init();
+    const id = program.params ? await init(program.params) : await init();
     console.log(await id.isInteractionResponseValid(response))
     id.close();
   });

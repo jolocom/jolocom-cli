@@ -25,27 +25,22 @@ const Controller = async (seed: any, password: string) => {
     clearInteractions: (): void => {
       interactions = {};
     },
-    generate: async (typ, reqresp, attrs) => {
+    generateRequest: async (typ, attrs) => {
       try {
-        const token = await idw.create.interactionTokens[reqresp][typ](attrs);
-        if (reqresp === 'request') {
-          interactions[token.nonce];
-        }
+        const token = await idw.create.interactionTokens.request[typ](attrs, password);
+        interactions[token.nonce] = token;
         return token.encode();
-      } catch {
-        return 'Error: malformed invokation'
+      } catch (error) {
+        return 'Error: Malformed Invokation: ' + error;
       }
     },
-
-    getAuthenticationRequest: async (callback_url: string) => {
-      const req = await idw.create.interactionTokens.request.auth({callbackURL: callback_url}, password);
-      interactions[req.nonce] = req;
-      return req.encode();
-    },
-    getPaymentRequest: async (payment_details) => {
-      const req = await idw.create.interactionTokens.request.payment(payment_details, password);
-      interactions[req.nonce] = req;
-      return req.encode();
+    generateResponse: async (typ, attrs, recieved?) => {
+      try {
+        const token = await idw.create.interactionTokens.response[typ](attrs, password, recieved);
+        return token.encode();
+      } catch (error) {
+        return 'Error: Malformed Invokation: ' + error;
+      }
     },
     isInteractionResponseValid: async response => {
       const resp = JolocomLib.parse.interactionToken.fromJWT(response);
