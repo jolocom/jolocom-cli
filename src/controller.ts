@@ -29,7 +29,7 @@ const Controller = async (seed: any, password: string) => {
     },
     generateRequest: async (typ: string, attrs): Promise<string> => {
       if (!attrCheck.request[typ](attrs)) {
-        return 'Error: Incorrect token attribute form for interaction type ' + typ;
+        return 'Error: Incorrect token attribute form for interaction type ' + typ + ' request';
       }
       try {
         const token = await tokens.request[typ](attrs, password);
@@ -41,7 +41,7 @@ const Controller = async (seed: any, password: string) => {
     },
     generateResponse: async (typ: string, attrs, recieved?: string): Promise<string> => {
       if (!attrCheck.response[typ](attrs)) {
-        return 'Error: Incorrect token attribute form for interaction type ' + typ;
+        return 'Error: Incorrect token attribute form for interaction type ' + typ + ' response';
       }
       try {
         const token = await tokens.response[typ](attrs, password, recieved);

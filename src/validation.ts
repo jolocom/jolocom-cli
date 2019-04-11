@@ -1,4 +1,3 @@
-import {JolocomLib} from 'jolocom-lib';
 import { AuthRequestCreationArgs,
          CredentialShareRequestCreationArgs,
          CredentialShareResponseCreationArgs,
@@ -7,32 +6,47 @@ import { AuthRequestCreationArgs,
          CredentialOfferResponseCreationArgs,
          PaymentResponseCreationArgs } from 'jolocom-lib/js/identityWallet/types';
 
+const hasElOfType = (attrs: any, el: string, typ: string): boolean => {
+  return attrs && attrs[el] && typeof(attrs[el]) === typ;
+}
+
+const hasCallback = (attrs: any): boolean => {
+  return hasElOfType(attrs, 'callbackURL', 'string');
+}
+
 const isAuth = (attrs: any): attrs is AuthRequestCreationArgs => {
-  return attrs && attrs.callbackURL && typeof(attrs.callbackURL) == 'string';
+  return hasCallback(attrs);
 }
 
 const isCredShareReq = (attrs: any): attrs is CredentialShareRequestCreationArgs => {
-  return false;
+  return hasCallback(attrs) &&
+    hasElOfType(attrs, 'credentialRequirements', 'object');
 }
 
 const isCredShareResp = (attrs: any): attrs is CredentialShareResponseCreationArgs => {
-  return false;
+  return hasCallback(attrs) &&
+    hasElOfType(attrs, 'suppliedCredentials', 'object');
 }
 
 const isCredOfferReq = (attrs: any): attrs is CredentialOfferRequestCreationArgs => {
-  return false;
+  return hasCallback(attrs) &&
+    hasElOfType(attrs, 'instant', 'boolean') &&
+    hasElOfType(attrs, 'requestedInput', 'object');
 }
 
 const isCredOfferResp = (attrs: any): attrs is CredentialOfferResponseCreationArgs => {
-  return false;
+  return hasElOfType(attrs, 'signedCredentials', 'object');
 }
 
 const isPaymentReq = (attrs: any): attrs is PaymentRequestCreationArgs => {
-  return false;
+  return hasCallback(attrs) &&
+    hasElOfType(attrs, 'description', 'string') &&
+    hasElOfType(attrs, 'transactionOptions', 'object') &&
+    hasElOfType(attrs.transactionOptions, 'value', 'number');
 }
 
 const isPaymentResp = (attrs: any): attrs is PaymentResponseCreationArgs => {
-  return false;
+  return hasElOfType(attrs, 'txHash', 'string');
 }
 
 export default {request: {auth: isAuth,
