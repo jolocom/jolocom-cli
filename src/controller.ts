@@ -27,7 +27,7 @@ const Controller = async (seed: any, password: string) => {
     clearInteractions: (): void => {
       interactions = {};
     },
-    generateRequest: async (typ: string, attrs): Promise<string> => {
+    generateRequest: async (typ: string, attrs: any): Promise<string> => {
       if (!attrCheck.request[typ](attrs)) {
         return 'Error: Incorrect token attribute form for interaction type ' + typ + ' request';
       }
@@ -39,20 +39,20 @@ const Controller = async (seed: any, password: string) => {
         return 'Error: Malformed Invokation: ' + error;
       }
     },
-    generateResponse: async (typ: string, attrs, recieved?: string): Promise<string> => {
+    generateResponse: async (typ: string, attrs: any, recieved?: string): Promise<string> => {
       if (!attrCheck.response[typ](attrs)) {
         return 'Error: Incorrect token attribute form for interaction type ' + typ + ' response';
       }
       try {
-        const token = await tokens.response[typ](attrs, password, recieved);
+        const token = await tokens.response[typ](attrs, password, JolocomLib.parse.interactionToken.fromJWT(recieved));
         return token.encode();
       } catch (error) {
         return 'Error: Malformed Invokation: ' + error;
       }
     },
-    isInteractionResponseValid: async response => {
+    isInteractionResponseValid: async (response: string): Promise<boolean> => {
       const resp = JolocomLib.parse.interactionToken.fromJWT(response);
-      const req = interactions[resp.nonce];
+      const req = JolocomLib.parse.interactionToken.fromJSON(interactions[resp.nonce]);
       try {
         await idw.validateJWT(resp, req);
         delete interactions[resp.nonce];
