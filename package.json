@@ -1,6 +1,6 @@
 {
   "name": "jolocom-cli",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "CLI interface for a Jolocom Self Sovereign Identity",
   "main": "cli.js",
   "scripts": {
