@@ -27,7 +27,6 @@ program.command('generate <type> <reqresp> <attrs> [recieved]')
   .action(async (type, requestresponse, attrs_string, recieved?) => {
     const id = program.params ? await init(program.params) : await init();
     const attrs = JSON.parse(attrs_string);
-    console.log(attrs);
     switch (requestresponse) {
       case 'request':
         console.log(await id.generateRequest(type, attrs));

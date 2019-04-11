@@ -34,6 +34,8 @@ const Controller = async (seed: any, password: string) => {
     interactions = {};
   }
 
+  const tokens = idw.create.interactionTokens;
+
   return {
     getDid: (): string => {
       return idw.did;
@@ -43,7 +45,7 @@ const Controller = async (seed: any, password: string) => {
     },
     generateRequest: async (typ: string, attrs: ReqArgT): Promise<string> => {
       try {
-        const token = await idw.create.interactionTokens.request[typ](attrs, password);
+        const token = await tokens.request[typ](attrs, password);
         interactions[token.nonce] = token;
         return token.encode();
       } catch (error) {
@@ -52,7 +54,7 @@ const Controller = async (seed: any, password: string) => {
     },
     generateResponse: async (typ: string, attrs: RespArgT, recieved?: string): Promise<string> => {
       try {
-        const token = await idw.create.interactionTokens.response[typ](attrs, password, recieved);
+        const token = await tokens.response[typ](attrs, password, recieved);
         return token.encode();
       } catch (error) {
         return 'Error: Malformed Invokation: ' + error;
