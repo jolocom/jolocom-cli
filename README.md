@@ -29,7 +29,6 @@ The interaction types consist of:
 - offer: Credential Offer
 - share: Credential Share
 - payment: Payment
-- issue: Credential Issuance (can only be a response)
 
 The Attributes these types require are all in JSON form and are specified in their [typings file](https://github.com/jolocom/jolocom-lib/blob/master/ts/interactionTokens/interactionTokens.types.ts)
 
