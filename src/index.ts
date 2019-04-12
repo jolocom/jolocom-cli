@@ -1,31 +1,35 @@
 import * as program from 'commander';
 import Controller from './controller';
 
-const init = async (paramlist?: string[]) => {
-  if (paramlist && paramlist.length == 2) {
-    return await Controller(Buffer.alloc(32, paramlist[0], 'hex'), paramlist[1]);
-  }
-
-  return await Controller(Buffer.alloc(32, 'a'.repeat(64), 'hex'), 'secret');
+const init = async (params?: {idArgs?: {seed: Buffer, password: string}, endpoint?: string}) => {
+  console.log(params);
+  return await Controller(params);
 };
 
+const readSeedAndPass = (input: string): {seed: Buffer, password: string} => {
+  const vlist = input.split(',');
+  return {seed: Buffer.from(vlist[0], 'hex'),
+          password: vlist[1]};
+}
+
 program.version('0.1.0')
-  .option('-p, --params <seed>,<password>',
-          'choose a seed (64 digit hex) and password in list form: seed,password',
-          (val: string): string[] => val.split(','));
+  .option('-i, --identity <seed>,<password>',
+          'choose an identity corrosponding to the seed (64 digit hex) and password in list form: seed,password',
+          readSeedAndPass)
+  .option('-s, --stax <endpoint>',
+          'use a Telekom STAX deployment in place of Ethereum and IPFS');
 
 program.command('did')
   .description('Get basic info (did) for this identity')
   .action(async _ => {
-    const id = program.params ? await init(program.params) : await init();
+    const id = await init({idArgs: program.identity, endpoint: program.stax});
     console.log(id.getDid());
-    id.close();
   });
 
 program.command('generate <type> <reqresp> <attrs> [recieved]')
   .description('Generate a request or response JWT of any type with attributes in json form. For a response, the optional recieved param is the request')
   .action(async (type, requestresponse, attrs_string, recieved?) => {
-    const id = program.params ? await init(program.params) : await init();
+    const id = await init({idArgs: program.identity, endpoint: program.stax});
     const attrs = JSON.parse(attrs_string);
     switch (requestresponse) {
       case 'request':
@@ -40,11 +44,26 @@ program.command('generate <type> <reqresp> <attrs> [recieved]')
     id.close();
   });
 
+program.command('fuel')
+  .description('Fuels an identity with some Eth. Will be deprecated upon main net.')
+  .action(async _ => {
+    const id = await init({idArgs: program.identity, endpoint: program.stax});
+    await id.fuel();
+  })
+
+program.command('clear')
+  .description('Clears the stored history of generated request tokens which are used for response validation.')
+  .action(async _ => {
+    const id = await init({idArgs: program.identity, endpoint: program.stax});
+    id.clearInteractions();
+    id.close();
+  })
+
 program
   .command('validate <response>')
   .description('Validate a JWT given in response to an interaction request')
   .action(async (response) => {
-    const id = program.params ? await init(program.params) : await init();
+    const id = await init({idArgs: program.identity, endpoint: program.stax});
     console.log(await id.isInteractionResponseValid(response))
     id.close();
   });

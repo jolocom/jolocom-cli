@@ -1,14 +1,55 @@
 import {JolocomLib} from 'jolocom-lib';
+import {getStaxConfiguredContractsConnector,
+        getStaxConfiguredStorageConnector,
+        getStaxConfiguredContractsGateway} from 'jolocom-lib-stax-connector'
 import * as fs from 'fs';
+import axios from 'axios';
 import attrCheck from './validation';
+import { createJolocomRegistry } from 'jolocom-lib/js/registries/jolocomRegistry';
+import { ContractsAdapter } from 'jolocom-lib/js/contracts/contractsAdapter';
 
-const Controller = async (seed: any, password: string) => {
+const httpAgent = {
+  getRequest: endpoint => {
+    return axios.get(endpoint).then(res => res.data);
+  },
 
-  const reg = JolocomLib.registries.jolocom.create();
-  const vkp = new JolocomLib.KeyProvider(seed, password);
+  postRequest: (endpoint, headers, data) => {
+    return axios.post(endpoint, data, { headers }).then(res => res.data);
+  },
+
+  headRequest: endpoint => {
+    return axios.head(endpoint)
+      .then(res => res)
+      .catch(err => err);
+  }
+};
+
+const Controller = async (params?: {idArgs?: {seed: any, password: string}, endpoint?: string}) => {
+  const idArgs = (params && params.idArgs) || {seed: Buffer.from('a'.repeat(64), 'hex'), password: 'secret'};
+  const reg = params.endpoint ? createJolocomRegistry({
+    ethereumConnector: getStaxConfiguredContractsConnector(
+      params.endpoint,
+      '0x32dacb62d2fe618697f192cda3abc50426e5486c',
+      httpAgent,
+    ),
+    ipfsConnector: getStaxConfiguredStorageConnector(
+      params.endpoint,
+      httpAgent,
+    ),
+    contracts: {
+      gateway: getStaxConfiguredContractsGateway(
+        params.endpoint,
+        777,
+        httpAgent,
+      ),
+      adapter: new ContractsAdapter(777),
+    },
+  }) : JolocomLib.registries.jolocom.create();
+
+  const vkp = new JolocomLib.KeyProvider(idArgs.seed, idArgs.password);
   const idw = await reg.authenticate(vkp, {
     derivationPath: JolocomLib.KeyTypes.jolocomIdentityKey,
-    encryptionPass: password
+    encryptionPass: idArgs.password
   })
   var interactions: {};
   const dir = __dirname + '/interactions/' + idw.did.slice(10, 30);
@@ -32,7 +73,7 @@ const Controller = async (seed: any, password: string) => {
         return 'Error: Incorrect token attribute form for interaction type ' + typ + ' request';
       }
       try {
-        const token = await tokens.request[typ](attrs, password);
+        const token = await tokens.request[typ](attrs, idArgs.password);
         interactions[token.nonce] = token;
         return token.encode();
       } catch (error) {
@@ -44,7 +85,7 @@ const Controller = async (seed: any, password: string) => {
         return 'Error: Incorrect token attribute form for interaction type ' + typ + ' response';
       }
       try {
-        const token = await tokens.response[typ](attrs, password, JolocomLib.parse.interactionToken.fromJWT(recieved));
+        const token = await tokens.response[typ](attrs, idArgs.password, JolocomLib.parse.interactionToken.fromJWT(recieved));
         return token.encode();
       } catch (error) {
         return 'Error: Malformed Invokation: ' + error;
@@ -60,6 +101,10 @@ const Controller = async (seed: any, password: string) => {
       } catch (err) {
         return false;
       }
+    },
+    fuel: async () => {
+      await JolocomLib.util.fuelKeyWithEther(vkp.getPublicKey({derivationPath: JolocomLib.KeyTypes.ethereumKey,
+                                                               encryptionPass: idArgs.password}));
     },
     close: () => {
       try {
