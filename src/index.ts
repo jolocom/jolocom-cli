@@ -1,5 +1,5 @@
 import * as program from 'commander';
-import Controller from './controller';
+import {Controller, fuel, create} from './controller';
 
 const init = async (params?: {idArgs?: {seed: Buffer, password: string}, endpoint?: string}) => {
   console.log(params);
@@ -26,6 +26,26 @@ program.command('did')
     console.log(id.getDid());
   });
 
+program.command('create')
+  .description('Creates an identity. If already existant, this fails silently.')
+  .action(async _ => {
+    await create({idArgs: program.identity, endpoint: program.stax});
+  })
+
+program.command('fuel')
+  .description('Fuels an identity with some Eth. Will be deprecated upon main net.')
+  .action(async _ => {
+    await fuel({idArgs: program.identity, endpoint: program.stax});
+  })
+
+program.command('clear')
+  .description('Clears the stored history of generated request tokens which are used for response validation.')
+  .action(async _ => {
+    const id = await init({idArgs: program.identity, endpoint: program.stax});
+    id.clearInteractions();
+    id.close();
+  })
+
 program.command('generate <type> <reqresp> <attrs> [recieved]')
   .description('Generate a request or response JWT of any type with attributes in json form. For a response, the optional recieved param is the request')
   .action(async (type, requestresponse, attrs_string, recieved?) => {
@@ -43,21 +63,6 @@ program.command('generate <type> <reqresp> <attrs> [recieved]')
     }
     id.close();
   });
-
-program.command('fuel')
-  .description('Fuels an identity with some Eth. Will be deprecated upon main net.')
-  .action(async _ => {
-    const id = await init({idArgs: program.identity, endpoint: program.stax});
-    await id.fuel();
-  })
-
-program.command('clear')
-  .description('Clears the stored history of generated request tokens which are used for response validation.')
-  .action(async _ => {
-    const id = await init({idArgs: program.identity, endpoint: program.stax});
-    id.clearInteractions();
-    id.close();
-  })
 
 program
   .command('validate <response>')

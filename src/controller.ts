@@ -7,6 +7,8 @@ import axios from 'axios';
 import attrCheck from './validation';
 import { createJolocomRegistry } from 'jolocom-lib/js/registries/jolocomRegistry';
 import { ContractsAdapter } from 'jolocom-lib/js/contracts/contractsAdapter';
+import { IVaultedKeyProvider } from 'jolocom-lib/js/vaultedKeyProvider/types';
+import { IRegistry } from 'jolocom-lib/js/registries/types';
 
 const httpAgent = {
   getRequest: endpoint => {
@@ -24,33 +26,64 @@ const httpAgent = {
   }
 };
 
-const Controller = async (params?: {idArgs?: {seed: any, password: string}, endpoint?: string}) => {
-  const idArgs = (params && params.idArgs) || {seed: Buffer.from('a'.repeat(64), 'hex'), password: 'secret'};
-  const reg = params.endpoint ? createJolocomRegistry({
-    ethereumConnector: getStaxConfiguredContractsConnector(
-      params.endpoint,
-      '0x32dacb62d2fe618697f192cda3abc50426e5486c',
-      httpAgent,
-    ),
-    ipfsConnector: getStaxConfiguredStorageConnector(
-      params.endpoint,
-      httpAgent,
-    ),
-    contracts: {
-      gateway: getStaxConfiguredContractsGateway(
-        params.endpoint,
-        777,
-        httpAgent,
-      ),
-      adapter: new ContractsAdapter(777),
-    },
-  }) : JolocomLib.registries.jolocom.create();
+interface IDParameters {
+  idArgs?: {seed: Buffer,
+            password: string},
+  endpoint?: string
+}
 
-  const vkp = new JolocomLib.KeyProvider(idArgs.seed, idArgs.password);
+const get_infrastructure = async (params?: IDParameters): Promise<{vkp: IVaultedKeyProvider,
+                                                                   reg: IRegistry,
+                                                                   password: string}> => {
+  const idArgs = (params && params.idArgs) || {seed: Buffer.from('a'.repeat(64), 'hex'), password: 'secret'};
+
+  return {vkp: new JolocomLib.KeyProvider(idArgs.seed, idArgs.password),
+          reg: params.endpoint ? createJolocomRegistry({
+            ethereumConnector: getStaxConfiguredContractsConnector(
+              params.endpoint,
+              '0x32dacb62d2fe618697f192cda3abc50426e5486c',
+              httpAgent,
+            ),
+            ipfsConnector: getStaxConfiguredStorageConnector(
+              params.endpoint,
+              httpAgent,
+            ),
+            contracts: {
+              gateway: getStaxConfiguredContractsGateway(
+                params.endpoint,
+                777,
+                httpAgent,
+              ),
+              adapter: new ContractsAdapter(777),
+            },
+          }) : JolocomLib.registries.jolocom.create(),
+          password: idArgs.password};
+}
+
+export const create = async (params?: IDParameters) => {
+  const {vkp, reg, password} = await get_infrastructure(params);
+
+  reg.create(vkp, password);
+}
+
+export const fuel = async (params?: IDParameters) => {
+  const {vkp, reg, password} = await get_infrastructure(params);
+
+  JolocomLib.util.fuelKeyWithEther(vkp.getPublicKey({
+    derivationPath: JolocomLib.KeyTypes.ethereumKey,
+    encryptionPass: password
+  }));
+}
+
+export const Controller = async (params?: IDParameters) => {
+  const {vkp, reg, password} = await get_infrastructure(params);
+
   const idw = await reg.authenticate(vkp, {
     derivationPath: JolocomLib.KeyTypes.jolocomIdentityKey,
-    encryptionPass: idArgs.password
+    encryptionPass: password
   })
+  const tokens = idw.create.interactionTokens;
+
   var interactions: {};
   const dir = __dirname + '/interactions/' + idw.did.slice(10, 30);
   try {
@@ -58,8 +91,6 @@ const Controller = async (params?: {idArgs?: {seed: any, password: string}, endp
   } catch {
     interactions = {};
   }
-
-  const tokens = idw.create.interactionTokens;
 
   return {
     getDid: (): string => {
@@ -73,7 +104,7 @@ const Controller = async (params?: {idArgs?: {seed: any, password: string}, endp
         return 'Error: Incorrect token attribute form for interaction type ' + typ + ' request';
       }
       try {
-        const token = await tokens.request[typ](attrs, idArgs.password);
+        const token = await tokens.request[typ](attrs, password);
         interactions[token.nonce] = token;
         return token.encode();
       } catch (error) {
@@ -85,7 +116,9 @@ const Controller = async (params?: {idArgs?: {seed: any, password: string}, endp
         return 'Error: Incorrect token attribute form for interaction type ' + typ + ' response';
       }
       try {
-        const token = await tokens.response[typ](attrs, idArgs.password, JolocomLib.parse.interactionToken.fromJWT(recieved));
+        const token = await tokens.response[typ](attrs,
+                                                 password,
+                                                 JolocomLib.parse.interactionToken.fromJWT(recieved));
         return token.encode();
       } catch (error) {
         return 'Error: Malformed Invokation: ' + error;
@@ -102,10 +135,6 @@ const Controller = async (params?: {idArgs?: {seed: any, password: string}, endp
         return false;
       }
     },
-    fuel: async () => {
-      await JolocomLib.util.fuelKeyWithEther(vkp.getPublicKey({derivationPath: JolocomLib.KeyTypes.ethereumKey,
-                                                               encryptionPass: idArgs.password}));
-    },
     close: () => {
       try {
         fs.writeFileSync(dir + '/interactions.json', JSON.stringify(interactions), 'utf8');
@@ -116,5 +145,3 @@ const Controller = async (params?: {idArgs?: {seed: any, password: string}, endp
     }
   }
 };
-
-export default Controller;
