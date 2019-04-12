@@ -4,6 +4,8 @@ Jolocom-cli is a cli tool to interact with a jolocom self-sovereign identity.
 ## Installation:
 Simply run `npm install -g jolocom-cli`
 
+Alternatively, for a local installation, run `npm run prepare` to transpile and then `node cli.js` in place of `jolocom-cli` for any command.
+
 ## Usage
 Usage information can be found with the -h flag.
 
@@ -29,7 +31,6 @@ The interaction types consist of:
 - offer: Credential Offer
 - share: Credential Share
 - payment: Payment
-- issue: Credential Issuance (can only be a response)
 
 The Attributes these types require are all in JSON form and are specified in their [typings file](https://github.com/jolocom/jolocom-lib/blob/master/ts/interactionTokens/interactionTokens.types.ts)
 
