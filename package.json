@@ -1,6 +1,6 @@
 {
   "name": "jolocom-cli",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "CLI interface for a Jolocom Self Sovereign Identity",
   "main": "cli.js",
   "scripts": {
@@ -8,13 +8,14 @@
     "prepare": "rm -rf dist && tsc -p ."
   },
   "bin": {
-      "jolocom-cli": "cli.js"
+    "jolocom-cli": "cli.js"
   },
   "author": "charles cunningham",
   "license": "ISC",
   "dependencies": {
     "commander": "^2.20.0",
-    "jolocom-lib": "^2.4.0"
+    "jolocom-lib": "^2.4.2",
+    "jolocom-lib-stax-connector": "^0.3.1"
   },
   "devDependencies": {
     "@types/node": "^11.13.2",
