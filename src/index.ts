@@ -1,11 +1,6 @@
 import * as program from 'commander';
 import {Controller, fuel, create} from './controller';
 
-const init = async (params?: {idArgs?: {seed: Buffer, password: string}, endpoint?: string}) => {
-  console.log(params);
-  return await Controller(params);
-};
-
 const readSeedAndPass = (input: string): {seed: Buffer, password: string} => {
   const vlist = input.split(',');
   return {seed: Buffer.from(vlist[0], 'hex'),
@@ -22,7 +17,7 @@ program.version('0.1.0')
 program.command('did')
   .description('Get basic info (did) for this identity')
   .action(async _ => {
-    const id = await init({idArgs: program.identity, endpoint: program.stax});
+    const id = await Controller({idArgs: program.identity, endpoint: program.stax});
     console.log(id.getDid());
   });
 
@@ -41,7 +36,7 @@ program.command('fuel')
 program.command('clear')
   .description('Clears the stored history of generated request tokens which are used for response validation.')
   .action(async _ => {
-    const id = await init({idArgs: program.identity, endpoint: program.stax});
+    const id = await Controller({idArgs: program.identity, endpoint: program.stax});
     id.clearInteractions();
     id.close();
   })
@@ -49,7 +44,7 @@ program.command('clear')
 program.command('generate <type> <reqresp> <attrs> [recieved]')
   .description('Generate a request or response JWT of any type with attributes in json form. For a response, the optional recieved param is the request')
   .action(async (type, requestresponse, attrs_string, recieved?) => {
-    const id = await init({idArgs: program.identity, endpoint: program.stax});
+    const id = await Controller({idArgs: program.identity, endpoint: program.stax});
     const attrs = JSON.parse(attrs_string);
     switch (requestresponse) {
       case 'request':
@@ -68,7 +63,7 @@ program
   .command('validate <response>')
   .description('Validate a JWT given in response to an interaction request')
   .action(async (response) => {
-    const id = await init({idArgs: program.identity, endpoint: program.stax});
+    const id = await Controller({idArgs: program.identity, endpoint: program.stax});
     console.log(await id.isInteractionResponseValid(response))
     id.close();
   });

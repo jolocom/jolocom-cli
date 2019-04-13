@@ -10,6 +10,12 @@ import { ContractsAdapter } from 'jolocom-lib/js/contracts/contractsAdapter';
 import { IVaultedKeyProvider } from 'jolocom-lib/js/vaultedKeyProvider/types';
 import { IRegistry } from 'jolocom-lib/js/registries/types';
 
+interface IDParameters {
+  idArgs?: {seed: Buffer,
+            password: string},
+  endpoint?: string
+}
+
 const httpAgent = {
   getRequest: endpoint => {
     return axios.get(endpoint).then(res => res.data);
@@ -26,11 +32,6 @@ const httpAgent = {
   }
 };
 
-interface IDParameters {
-  idArgs?: {seed: Buffer,
-            password: string},
-  endpoint?: string
-}
 
 const get_infrastructure = async (params?: IDParameters): Promise<{vkp: IVaultedKeyProvider,
                                                                    reg: IRegistry,
