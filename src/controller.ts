@@ -13,7 +13,8 @@ import { IRegistry } from 'jolocom-lib/js/registries/types';
 interface IDParameters {
   idArgs?: {seed: Buffer,
             password: string},
-  endpoint?: string
+  dep?: {endpoint: string,
+         contract: string}
 }
 
 const httpAgent = {
@@ -39,19 +40,19 @@ const get_infrastructure = async (params?: IDParameters): Promise<{vkp: IVaulted
   const idArgs = (params && params.idArgs) || {seed: Buffer.from('a'.repeat(64), 'hex'), password: 'secret'};
 
   return {vkp: new JolocomLib.KeyProvider(idArgs.seed, idArgs.password),
-          reg: params.endpoint ? createJolocomRegistry({
+          reg: params.dep ? createJolocomRegistry({
             ethereumConnector: getStaxConfiguredContractsConnector(
-              params.endpoint,
-              '0x32dacb62d2fe618697f192cda3abc50426e5486c',
+              params.dep.endpoint,
+              params.dep.contract || '0x32dacb62d2fe618697f192cda3abc50426e5486c',
               httpAgent,
             ),
             ipfsConnector: getStaxConfiguredStorageConnector(
-              params.endpoint,
+              params.dep.endpoint,
               httpAgent,
             ),
             contracts: {
               gateway: getStaxConfiguredContractsGateway(
-                params.endpoint,
+                params.dep.endpoint,
                 777,
                 httpAgent,
               ),
