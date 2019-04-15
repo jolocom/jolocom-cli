@@ -39,7 +39,6 @@ const get_infrastructure = async (params?: IDParameters): Promise<{vkp: IVaulted
                                                                    password: string}> => {
   const idArgs = (params && params.idArgs) || {seed: Buffer.from('a'.repeat(64), 'hex'), password: 'secret'};
 
-  console.log(params);
   return {vkp: new JolocomLib.KeyProvider(idArgs.seed, idArgs.password),
           reg: params.dep ? createJolocomRegistry({
             ethereumConnector: getStaxConfiguredContractsConnector(
@@ -79,7 +78,6 @@ export const fuel = async (params?: IDParameters) => {
 }
 
 export const Controller = async (params?: IDParameters) => {
-  console.log(params);
   const {vkp, reg, password} = await get_infrastructure(params);
   const idw = await reg.authenticate(vkp, {
     derivationPath: JolocomLib.KeyTypes.jolocomIdentityKey,
