@@ -25,6 +25,9 @@ Example usage:
 - validate the authentication response generated above with a,b:
 `jolocom-cli validate <JWT> -p a,b`
 
+- use custom [STAX](https://laboratories.telekom.com/blockchain/) deployment with endpoint and registry contract address:
+`jolocom-cli {command} -s "https://r2bapi.dltstax.net",0x32dacb62d2fe618697f192cda3abc50426e5486c
+
 ## Interaction Types and Attributes
 The interaction types consist of:
 - auth: Authentication
