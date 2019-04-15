@@ -1,18 +1,25 @@
 import * as program from 'commander';
 import {Controller, fuel, create} from './controller';
 
-const readSeedAndPass = (input: string): {seed: Buffer, password: string} => {
+const readSeedAndParse = (input: string): {seed: Buffer, password: string} => {
   const vlist = input.split(',');
   return {seed: Buffer.from(vlist[0], 'hex'),
           password: vlist[1]};
 }
 
+const readDepAndParse = (input: string): {endpoint: string, contract: string} => {
+  const vlist = input.split(',');
+  return {endpoint: vlist[0],
+          contract: vlist[1]};
+}
+
 program.version('0.1.0')
   .option('-i, --identity <seed>,<password>',
           'choose an identity corrosponding to the seed (64 digit hex) and password in list form: seed,password',
-          readSeedAndPass)
+          readSeedAndParse)
   .option('-s, --stax <endpoint>,<contract>',
-          'use a Telekom STAX deployment in place of Ethereum and IPFS, with an endpoint and a contract address');
+          'use a Telekom STAX deployment in place of Ethereum and IPFS, with an endpoint and a contract address',
+         readDepAndParse);
 
 program.command('did')
   .description('Get basic info (did) for this identity')
