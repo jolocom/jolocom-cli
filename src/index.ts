@@ -17,6 +17,7 @@ const readDepAndParse = (
 
 program
   .version("0.1.0")
+  .option("-Q --qr-code", "render the generated requests as QR codes")
   .option(
     "-i, --identity <seed>,<password>",
     "choose an identity corrosponding to the seed (64 digit hex) and password in list form: seed,password",
@@ -38,7 +39,7 @@ program
 
 program
   .command("create")
-  .description("Creates an identity. If already existant, this fails silently.")
+  .description("Creates an identity. If already existent, this fails silently.")
   .action(async _ => {
     await create({ idArgs: program.identity, dep: program.stax })
   })

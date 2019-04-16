@@ -11,6 +11,8 @@ import { createJolocomRegistry } from "jolocom-lib/js/registries/jolocomRegistry
 import { ContractsAdapter } from "jolocom-lib/js/contracts/contractsAdapter"
 import { IVaultedKeyProvider } from "jolocom-lib/js/vaultedKeyProvider/types"
 import { IRegistry } from "jolocom-lib/js/registries/types"
+import * as QrCode from "qrcode"
+import * as program from "commander"
 import { keyIdToDid } from "jolocom-lib/js/utils/helper"
 
 interface IDParameters {
@@ -123,9 +125,19 @@ export const Controller = async (params?: IDParameters) => {
       try {
         const token = await tokens.request[typ](attrs, password)
         interactions[token.nonce] = token
-        return token.encode()
+        if (program.qrCode) {
+          return QrCode.toString(token.encode(), (err, text) => {
+            if (err) {
+              console.log("Error: Could not encode token as QR code: ", err)
+              return
+            }
+            return text
+          })
+        } else {
+          return token.encode()
+        }
       } catch (error) {
-        return "Error: Malformed Invokation: " + error
+        return "Error: Malformed Invocation: " + error
       }
     },
     generateResponse: async (
@@ -148,7 +160,7 @@ export const Controller = async (params?: IDParameters) => {
         )
         return token.encode()
       } catch (error) {
-        return "Error: Malformed Invokation: " + error
+        return "Error: Malformed Invocation: " + error
       }
     },
     isInteractionResponseValid: async (
