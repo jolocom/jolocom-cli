@@ -1,12 +1,11 @@
 import {
-  AuthRequestCreationArgs,
   CredentialShareRequestCreationArgs,
   CredentialShareResponseCreationArgs,
   CredentialOfferRequestCreationArgs,
   PaymentRequestCreationArgs,
   CredentialOfferResponseCreationArgs,
-  PaymentResponseCreationArgs
-} from "jolocom-lib/js/identityWallet/types"
+  PaymentResponseCreationArgs, AuthCreationArgs
+} from 'jolocom-lib/js/identityWallet/types'
 
 const hasElOfType = (attrs: any, el: string, typ: string): boolean => {
   return attrs && attrs[el] && typeof attrs[el] === typ
@@ -16,7 +15,7 @@ const hasCallback = (attrs: any): boolean => {
   return hasElOfType(attrs, "callbackURL", "string")
 }
 
-const isAuth = (attrs: any): attrs is AuthRequestCreationArgs => {
+const isAuth = (attrs: any): attrs is AuthCreationArgs => {
   return hasCallback(attrs)
 }
 

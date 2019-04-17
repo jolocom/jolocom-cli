@@ -19,7 +19,7 @@
   "dependencies": {
     "axios": "^0.18.0",
     "commander": "^2.20.0",
-    "jolocom-lib": "^2.4.2",
+    "jolocom-lib": "^2.4.3",
     "jolocom-lib-stax-connector": "^0.3.1"
   },
   "devDependencies": {
