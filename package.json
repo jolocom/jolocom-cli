@@ -1,7 +1,10 @@
 {
   "name": "jolocom-cli",
-  "version": "1.2.0",
-  "files": ["cli.js", "dist/*.js"],
+  "version": "1.2.1",
+  "files": [
+    "cli.js",
+    "dist/*.js"
+  ],
   "description": "CLI interface for a Jolocom Self Sovereign Identity",
   "main": "cli.js",
   "scripts": {
