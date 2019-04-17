@@ -11,12 +11,16 @@ const hasElOfType = (attrs: any, el: string, typ: string): boolean => {
   return attrs && attrs[el] && typeof attrs[el] === typ
 }
 
+const optionalElOfType = (attrs: any, el: string, typ: string): boolean => {
+  return attrs && (attrs[el] ? typeof attrs[el] === typ : true);
+}
+
 const hasCallback = (attrs: any): boolean => {
   return hasElOfType(attrs, "callbackURL", "string")
 }
 
 const isAuth = (attrs: any): attrs is AuthCreationArgs => {
-  return hasCallback(attrs)
+  return hasCallback(attrs) && optionalElOfType(attrs, "description", "string")
 }
 
 const isCredShareReq = (
