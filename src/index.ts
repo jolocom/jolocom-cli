@@ -71,7 +71,9 @@ program
   .description('Validate a JWT given in response to an interaction request')
   .action(async (response) => {
     const id = await Controller({idArgs: program.identity, dep: program.stax});
-    console.log(await id.isInteractionResponseValid(response))
+    const resp = await id.isInteractionResponseValid(response);
+    console.log('valid: ' + resp.validity);
+    console.log('did: ' + resp.responder);
     id.close();
   });
 

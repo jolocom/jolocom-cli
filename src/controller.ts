@@ -125,15 +125,16 @@ export const Controller = async (params?: IDParameters) => {
         return 'Error: Malformed Invokation: ' + error;
       }
     },
-    isInteractionResponseValid: async (response: string): Promise<boolean> => {
+    isInteractionResponseValid: async (response: string): Promise<{responder: string,
+                                                                   validity: boolean}> => {
       const resp = JolocomLib.parse.interactionToken.fromJWT(response);
       const req = JolocomLib.parse.interactionToken.fromJSON(interactions[resp.nonce]);
       try {
         await idw.validateJWT(resp, req);
         delete interactions[resp.nonce];
-        return true;
+        return {responder: resp.issuer, validity: true};
       } catch (err) {
-        return false;
+        return {responder: resp.issuer, validity: false};
       }
     },
     close: () => {
