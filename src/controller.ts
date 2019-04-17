@@ -9,6 +9,7 @@ import { createJolocomRegistry } from 'jolocom-lib/js/registries/jolocomRegistry
 import { ContractsAdapter } from 'jolocom-lib/js/contracts/contractsAdapter';
 import { IVaultedKeyProvider } from 'jolocom-lib/js/vaultedKeyProvider/types';
 import { IRegistry } from 'jolocom-lib/js/registries/types';
+import {keyIdToDid} from 'jolocom-lib/js/utils/helper'
 
 interface IDParameters {
   idArgs?: {seed: Buffer,
@@ -132,9 +133,9 @@ export const Controller = async (params?: IDParameters) => {
       try {
         await idw.validateJWT(resp, req);
         delete interactions[resp.nonce];
-        return {responder: resp.issuer, validity: true};
+        return {responder: keyIdToDid(resp.issuer), validity: true};
       } catch (err) {
-        return {responder: resp.issuer, validity: false};
+        return {responder: keyIdToDid(resp.issuer), validity: false};
       }
     },
     close: () => {
