@@ -1,5 +1,5 @@
 # jolocom-cli
-Jolocom-cli is a cli tool to interact with a jolocom self-sovereign identity.
+Jolocom-cli is a cli tool to interact with/as a jolocom self-sovereign identity.
 
 ## Installation:
 Simply run `npm install -g jolocom-cli`
