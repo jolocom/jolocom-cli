@@ -1,17 +1,17 @@
-import { JolocomLib } from "jolocom-lib"
+import { JolocomLib, claimsMetadata } from 'jolocom-lib'
 import {
   getStaxConfiguredContractsConnector,
   getStaxConfiguredStorageConnector,
   getStaxConfiguredContractsGateway
-} from "jolocom-lib-stax-connector"
-import * as fs from "fs"
-import axios from "axios"
-import attrCheck from "./validation"
-import { createJolocomRegistry } from "jolocom-lib/js/registries/jolocomRegistry"
-import { ContractsAdapter } from "jolocom-lib/js/contracts/contractsAdapter"
-import { IVaultedKeyProvider } from "jolocom-lib/js/vaultedKeyProvider/types"
-import { IRegistry } from "jolocom-lib/js/registries/types"
-import { keyIdToDid } from "jolocom-lib/js/utils/helper"
+} from 'jolocom-lib-stax-connector'
+import * as fs from 'fs'
+import axios from 'axios'
+import attrCheck from './validation'
+import { createJolocomRegistry } from 'jolocom-lib/js/registries/jolocomRegistry'
+import { ContractsAdapter } from 'jolocom-lib/js/contracts/contractsAdapter'
+import { IVaultedKeyProvider } from 'jolocom-lib/js/vaultedKeyProvider/types'
+import { IRegistry } from 'jolocom-lib/js/registries/types'
+import { keyIdToDid } from 'jolocom-lib/js/utils/helper'
 
 interface IDParameters {
   idArgs?: { seed: Buffer; password: string }
@@ -39,8 +39,8 @@ const get_infrastructure = async (
   params?: IDParameters
 ): Promise<{ vkp: IVaultedKeyProvider; reg: IRegistry; password: string }> => {
   const idArgs = (params && params.idArgs) || {
-    seed: Buffer.from("a".repeat(64), "hex"),
-    password: "secret"
+    seed: Buffer.from('a'.repeat(64), 'hex'),
+    password: 'secret'
   }
 
   return {
@@ -49,7 +49,7 @@ const get_infrastructure = async (
       ? createJolocomRegistry({
           ethereumConnector: getStaxConfiguredContractsConnector(
             params.dep.endpoint,
-            params.dep.contract || "0x32dacb62d2fe618697f192cda3abc50426e5486c",
+            params.dep.contract || '0x32dacb62d2fe618697f192cda3abc50426e5486c',
             httpAgent
           ),
           ipfsConnector: getStaxConfiguredStorageConnector(
@@ -96,10 +96,10 @@ export const Controller = async (params?: IDParameters) => {
   const tokens = idw.create.interactionTokens
 
   var interactions: {}
-  const dir = __dirname + "/interactions/" + idw.did.slice(10, 30)
+  const dir = __dirname + '/interactions/' + idw.did.slice(10, 30)
   try {
     interactions = JSON.parse(
-      fs.readFileSync(dir + "/interactions.json", "utf8")
+      fs.readFileSync(dir + '/interactions.json', 'utf8')
     )
   } catch {
     interactions = {}
@@ -115,9 +115,9 @@ export const Controller = async (params?: IDParameters) => {
     generateRequest: async (typ: string, attrs: any): Promise<string> => {
       if (!attrCheck.request[typ](attrs)) {
         return (
-          "Error: Incorrect token attribute form for interaction type " +
+          'Error: Incorrect token attribute form for interaction type ' +
           typ +
-          " request"
+          ' request'
         )
       }
       try {
@@ -125,8 +125,39 @@ export const Controller = async (params?: IDParameters) => {
         interactions[token.nonce] = token
         return token.encode()
       } catch (error) {
-        return "Error: Malformed Invokation: " + error
+        return 'Error: Malformed Invokation: ' + error
       }
+    },
+    createKeyCloakCredentials: async (name: string, email: string) => {
+      const idw = await reg.authenticate(vkp, {
+        derivationPath: JolocomLib.KeyTypes.jolocomIdentityKey,
+        encryptionPass: password
+      })
+
+      const nameCred = await idw.create.signedCredential(
+        {
+          metadata: claimsMetadata.name,
+          claim: {
+            familyName: name,
+            givenName: name
+          },
+          subject: idw.did
+        },
+        password
+      )
+
+      const emailCred = await idw.create.signedCredential(
+        {
+          metadata: claimsMetadata.emailAddress,
+          claim: {
+            email: email
+          },
+          subject: idw.did
+        },
+        password
+      )
+
+      return { nameCred, emailCred }
     },
     generateResponse: async (
       typ: string,
@@ -135,9 +166,9 @@ export const Controller = async (params?: IDParameters) => {
     ): Promise<string> => {
       if (!attrCheck.response[typ](attrs)) {
         return (
-          "Error: Incorrect token attribute form for interaction type " +
+          'Error: Incorrect token attribute form for interaction type ' +
           typ +
-          " response"
+          ' response'
         )
       }
       try {
@@ -148,7 +179,7 @@ export const Controller = async (params?: IDParameters) => {
         )
         return token.encode()
       } catch (error) {
-        return "Error: Malformed Invokation: " + error
+        return 'Error: Malformed Invokation: ' + error
       }
     },
     isInteractionResponseValid: async (
@@ -169,16 +200,16 @@ export const Controller = async (params?: IDParameters) => {
     close: () => {
       try {
         fs.writeFileSync(
-          dir + "/interactions.json",
+          dir + '/interactions.json',
           JSON.stringify(interactions),
-          "utf8"
+          'utf8'
         )
       } catch {
         fs.mkdirSync(dir, { recursive: true })
         fs.writeFileSync(
-          dir + "/interactions.json",
+          dir + '/interactions.json',
           JSON.stringify(interactions),
-          "utf8"
+          'utf8'
         )
       }
     }
