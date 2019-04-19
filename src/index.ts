@@ -98,7 +98,7 @@ program
     } = JolocomLib.parse.interactionToken.fromJWT<CredentialRequest>(credReq)
 
     const credentialResponse = await id.generateResponse(
-      InteractionType.CredentialResponse,
+      'share',
       {
         callbackURL: callbackURL,
         suppliedCredentials: [nameCred, emailCred]
@@ -107,6 +107,7 @@ program
     )
 
     console.log(credentialResponse)
+
     id.clearInteractions()
     id.close()
   })
