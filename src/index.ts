@@ -2,7 +2,6 @@ import * as program from 'commander'
 import { Controller, fuel, create } from './controller'
 import { JolocomLib } from 'jolocom-lib'
 import { CredentialRequest } from 'jolocom-lib/js/interactionTokens/credentialRequest'
-import { InteractionType } from 'jolocom-lib/js/interactionTokens/types'
 
 const readSeedAndParse = (
   input: string
@@ -54,7 +53,7 @@ program
     'Fuels an identity with some Eth. Will be deprecated upon main net.'
   )
   .action(async _ => {
-    await fuel({ idArgs: program.identity, dep: program.stax })
+    return await fuel({ idArgs: program.identity, dep: program.stax })
   })
 
 program
@@ -145,3 +144,4 @@ program
   })
 
 program.parse(process.argv)
+

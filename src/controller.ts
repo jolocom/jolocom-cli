@@ -11,7 +11,8 @@ import { createJolocomRegistry } from 'jolocom-lib/js/registries/jolocomRegistry
 import { ContractsAdapter } from 'jolocom-lib/js/contracts/contractsAdapter'
 import { IVaultedKeyProvider } from 'jolocom-lib/js/vaultedKeyProvider/types'
 import { IRegistry } from 'jolocom-lib/js/registries/types'
-import { keyIdToDid } from 'jolocom-lib/js/utils/helper'
+import {keyIdToDid, publicKeyToAddress} from 'jolocom-lib/js/utils/helper'
+import {awaitPaymentTxConfirmation, fuelAddress, getStaxEndpoints} from 'jolocom-lib-stax-connector/js/utils'
 
 interface IDParameters {
   idArgs?: { seed: Buffer; password: string }
@@ -72,19 +73,27 @@ const get_infrastructure = async (
 
 export const create = async (params?: IDParameters) => {
   const { vkp, reg, password } = await get_infrastructure(params)
-
-  reg.create(vkp, password)
+  return reg.create(vkp, password)
 }
 
 export const fuel = async (params?: IDParameters) => {
-  const { vkp, reg, password } = await get_infrastructure(params)
+  const { vkp, password } = await get_infrastructure(params)
+  const publicKey = vkp.getPublicKey({
+    derivationPath: JolocomLib.KeyTypes.ethereumKey,
+    encryptionPass: password
+  })
 
-  JolocomLib.util.fuelKeyWithEther(
-    vkp.getPublicKey({
-      derivationPath: JolocomLib.KeyTypes.ethereumKey,
-      encryptionPass: password
-    })
-  )
+  return params.dep
+    ? fuelAddress(
+      getStaxEndpoints(params.dep.endpoint).userInfoEndpoint,
+      publicKeyToAddress(publicKey),
+      httpAgent
+    ).then(txHash => awaitPaymentTxConfirmation(
+      getStaxEndpoints(params.dep.endpoint).paymentEndpoint,
+      txHash,
+      httpAgent
+    ))
+    : JolocomLib.util.fuelKeyWithEther(publicKey)
 }
 
 export const Controller = async (params?: IDParameters) => {
