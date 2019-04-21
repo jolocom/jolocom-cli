@@ -11,8 +11,12 @@ import { createJolocomRegistry } from 'jolocom-lib/js/registries/jolocomRegistry
 import { ContractsAdapter } from 'jolocom-lib/js/contracts/contractsAdapter'
 import { IVaultedKeyProvider } from 'jolocom-lib/js/vaultedKeyProvider/types'
 import { IRegistry } from 'jolocom-lib/js/registries/types'
-import {keyIdToDid, publicKeyToAddress} from 'jolocom-lib/js/utils/helper'
-import {awaitPaymentTxConfirmation, fuelAddress, getStaxEndpoints} from 'jolocom-lib-stax-connector/js/utils'
+import { keyIdToDid, publicKeyToAddress } from 'jolocom-lib/js/utils/helper'
+import {
+  awaitPaymentTxConfirmation,
+  fuelAddress,
+  getStaxEndpoints
+} from 'jolocom-lib-stax-connector/js/utils'
 
 interface IDParameters {
   idArgs?: { seed: Buffer; password: string }
@@ -76,7 +80,7 @@ export const create = async (params?: IDParameters) => {
   return reg.create(vkp, password)
 }
 
-export const fuel = async (params?: IDParameters) => {
+export const fuel = async (amount: number, params?: IDParameters) => {
   const { vkp, password } = await get_infrastructure(params)
   const publicKey = vkp.getPublicKey({
     derivationPath: JolocomLib.KeyTypes.ethereumKey,
@@ -85,14 +89,17 @@ export const fuel = async (params?: IDParameters) => {
 
   return params.dep
     ? fuelAddress(
-      getStaxEndpoints(params.dep.endpoint).userInfoEndpoint,
-      publicKeyToAddress(publicKey),
-      httpAgent
-    ).then(txHash => awaitPaymentTxConfirmation(
-      getStaxEndpoints(params.dep.endpoint).paymentEndpoint,
-      txHash,
-      httpAgent
-    ))
+        getStaxEndpoints(params.dep.endpoint).userInfoEndpoint,
+        publicKeyToAddress(publicKey),
+        httpAgent,
+        amount
+      ).then(txHash =>
+        awaitPaymentTxConfirmation(
+          getStaxEndpoints(params.dep.endpoint).paymentEndpoint,
+          txHash,
+          httpAgent
+        )
+      )
     : JolocomLib.util.fuelKeyWithEther(publicKey)
 }
 
@@ -114,9 +121,17 @@ export const Controller = async (params?: IDParameters) => {
     interactions = {}
   }
 
+  type DidInfo = {
+    did: string
+    created: Date
+  }
+
   return {
-    getDid: (): string => {
-      return idw.did
+    getDidInfo: (): DidInfo => {
+      return {
+        did: idw.did,
+        created: idw.didDocument.created
+      }
     },
     clearInteractions: (): void => {
       interactions = {}
@@ -203,6 +218,7 @@ export const Controller = async (params?: IDParameters) => {
         delete interactions[resp.nonce]
         return { responder: keyIdToDid(resp.issuer), validity: true }
       } catch (err) {
+        console.log(err)
         return { responder: keyIdToDid(resp.issuer), validity: false }
       }
     },
