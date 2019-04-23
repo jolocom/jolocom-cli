@@ -235,5 +235,5 @@ require('yargs')
     alias: 'i',
     description: 'Provide custom 32 byte seed to generate identity keys',
     type: 'string',
-    coerce: seed => ({ seed, password: 'secret' })
+    coerce: seed => ({ seed: Buffer.from(seed, 'hex'), password: 'secret' })
   }).argv
