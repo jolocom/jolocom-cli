@@ -37,18 +37,23 @@ const httpAgent = {
   }
 }
 
-const get_infrastructure = async (
-  params?: IDParameters
-): Promise<{ vkp: IVaultedKeyProvider; reg: IRegistry; password: string }> => {
-  const idArgs = (params && params.idArgs) || {
-    seed: Buffer.from('a'.repeat(64), 'hex'),
-    password: 'secret'
+const get_vkp = (params?: IDParameters): IVaultedKeyProvider => {
+  if (params && params.idArgs) {
+    return new JolocomLib.KeyProvider(params.idArgs.seed, params.idArgs.password);
   }
 
+  try {
+    return new HardwareKeyProvider();
+  } catch {
+    return new JolocomLib.KeyProvider(Buffer.from('a'.repeat(64), 'hex'), 'secret');
+  }
+}
+
+const get_infrastructure = (
+  params?: IDParameters
+): { vkp: IVaultedKeyProvider; reg: IRegistry; password: string } => {
   return {
-    vkp: params && params.idArgs
-      ? new JolocomLib.KeyProvider(params.idArgs.seed, params.idArgs.password)
-      : new HardwareKeyProvider(),
+    vkp: get_vkp(params),
     reg: params && params.dep
       ? createJolocomRegistry({
           ethereumConnector: getStaxConfiguredContractsConnector(
@@ -63,19 +68,19 @@ const get_infrastructure = async (
           }
         })
       : JolocomLib.registries.jolocom.create(),
-    password: params.idArgs
-      ? idArgs.password
-      : 'password'
+    password: params && params.idArgs
+      ? params.idArgs.password
+      : 'secret'
   }
 }
 
 export const create = async (params?: IDParameters) => {
-  const { vkp, reg, password } = await get_infrastructure(params)
+  const { vkp, reg, password } = get_infrastructure(params)
   return reg.create(vkp, password)
 }
 
 export const fuel = async (amount: number, params?: IDParameters) => {
-  const { vkp, password } = await get_infrastructure(params)
+  const { vkp, password } = get_infrastructure(params)
   const publicKey = vkp.getPublicKey({
     derivationPath: JolocomLib.KeyTypes.ethereumKey,
     encryptionPass: password
@@ -94,7 +99,7 @@ export const fuel = async (amount: number, params?: IDParameters) => {
 }
 
 export const Controller = async (params?: IDParameters) => {
-  const { vkp, reg, password } = await get_infrastructure(params)
+  const { vkp, reg, password } = get_infrastructure(params)
   const idw = await reg.authenticate(vkp, {
     derivationPath: JolocomLib.KeyTypes.jolocomIdentityKey,
     encryptionPass: password
