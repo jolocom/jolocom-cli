@@ -13,6 +13,7 @@ import { IVaultedKeyProvider } from 'jolocom-lib/js/vaultedKeyProvider/types'
 import { IRegistry } from 'jolocom-lib/js/registries/types'
 import { keyIdToDid, publicKeyToAddress } from 'jolocom-lib/js/utils/helper'
 import { awaitPaymentTxConfirmation, fuelAddress, getStaxEndpoints } from 'jolocom-lib-stax-connector/js/utils'
+import { HardwareKeyProvider } from 'hardware_key_provider'
 
 interface IDParameters {
   idArgs?: { seed: Buffer; password: string }
@@ -45,8 +46,10 @@ const get_infrastructure = async (
   }
 
   return {
-    vkp: new JolocomLib.KeyProvider(idArgs.seed, idArgs.password),
-    reg: params.dep
+    vkp: params && params.idArgs
+      ? new JolocomLib.KeyProvider(params.idArgs.seed, params.idArgs.password)
+      : new HardwareKeyProvider(),
+    reg: params && params.dep
       ? createJolocomRegistry({
           ethereumConnector: getStaxConfiguredContractsConnector(
             params.dep.endpoint,
@@ -60,7 +63,9 @@ const get_infrastructure = async (
           }
         })
       : JolocomLib.registries.jolocom.create(),
-    password: idArgs.password
+    password: params.idArgs
+      ? idArgs.password
+      : 'password'
   }
 }
 
