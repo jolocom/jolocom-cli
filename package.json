@@ -1,6 +1,6 @@
 {
   "name": "jolocom-cli",
-  "version": "1.2.3",
+  "version": "1.3.0",
   "files": [
     "cli.js",
     "dist/*.js"
@@ -18,12 +18,13 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^0.18.0",
-    "commander": "^2.20.0",
     "jolocom-lib": "^2.4.3",
-    "jolocom-lib-stax-connector": "^0.3.1"
+    "jolocom-lib-stax-connector": "^0.3.1",
+    "yargs": "^13.2.2"
   },
   "devDependencies": {
     "@types/node": "^11.13.2",
+    "@types/yargs": "^13.0.0",
     "prettier": "^1.17.0",
     "ts-node": "^8.0.3",
     "typescript": "^3.4.3"

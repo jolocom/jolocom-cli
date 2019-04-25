@@ -24,35 +24,21 @@ const isAuth = (attrs: any): attrs is AuthCreationArgs => {
   return hasCallback(attrs) && optionalElOfType(attrs, 'description', 'string')
 }
 
-const isCredShareReq = (
-  attrs: any
-): attrs is CredentialShareRequestCreationArgs => {
+const isCredShareReq = (attrs: any): attrs is CredentialShareRequestCreationArgs => {
+  return hasCallback(attrs) && hasElOfType(attrs, 'credentialRequirements', 'object')
+}
+
+const isCredShareResp = (attrs: any): attrs is CredentialShareResponseCreationArgs => {
+  return hasCallback(attrs) && hasElOfType(attrs, 'suppliedCredentials', 'object')
+}
+
+const isCredOfferReq = (attrs: any): attrs is CredentialOfferRequestCreationArgs => {
   return (
-    hasCallback(attrs) && hasElOfType(attrs, 'credentialRequirements', 'object')
+    hasCallback(attrs) && hasElOfType(attrs, 'instant', 'boolean') && hasElOfType(attrs, 'requestedInput', 'object')
   )
 }
 
-const isCredShareResp = (
-  attrs: any
-): attrs is CredentialShareResponseCreationArgs => {
-  return (
-    hasCallback(attrs) && hasElOfType(attrs, 'suppliedCredentials', 'object')
-  )
-}
-
-const isCredOfferReq = (
-  attrs: any
-): attrs is CredentialOfferRequestCreationArgs => {
-  return (
-    hasCallback(attrs) &&
-    hasElOfType(attrs, 'instant', 'boolean') &&
-    hasElOfType(attrs, 'requestedInput', 'object')
-  )
-}
-
-const isCredOfferResp = (
-  attrs: any
-): attrs is CredentialOfferResponseCreationArgs => {
+const isCredOfferResp = (attrs: any): attrs is CredentialOfferResponseCreationArgs => {
   return hasElOfType(attrs, 'signedCredentials', 'object')
 }
 

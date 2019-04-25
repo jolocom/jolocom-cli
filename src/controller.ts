@@ -11,7 +11,8 @@ import { createJolocomRegistry } from 'jolocom-lib/js/registries/jolocomRegistry
 import { ContractsAdapter } from 'jolocom-lib/js/contracts/contractsAdapter'
 import { IVaultedKeyProvider } from 'jolocom-lib/js/vaultedKeyProvider/types'
 import { IRegistry } from 'jolocom-lib/js/registries/types'
-import { keyIdToDid } from 'jolocom-lib/js/utils/helper'
+import { keyIdToDid, publicKeyToAddress } from 'jolocom-lib/js/utils/helper'
+import { awaitPaymentTxConfirmation, fuelAddress, getStaxEndpoints } from 'jolocom-lib-stax-connector/js/utils'
 
 interface IDParameters {
   idArgs?: { seed: Buffer; password: string }
@@ -52,16 +53,9 @@ const get_infrastructure = async (
             params.dep.contract || '0x32dacb62d2fe618697f192cda3abc50426e5486c',
             httpAgent
           ),
-          ipfsConnector: getStaxConfiguredStorageConnector(
-            params.dep.endpoint,
-            httpAgent
-          ),
+          ipfsConnector: getStaxConfiguredStorageConnector(params.dep.endpoint, httpAgent),
           contracts: {
-            gateway: getStaxConfiguredContractsGateway(
-              params.dep.endpoint,
-              777,
-              httpAgent
-            ),
+            gateway: getStaxConfiguredContractsGateway(params.dep.endpoint, 777, httpAgent),
             adapter: new ContractsAdapter(777)
           }
         })
@@ -72,19 +66,26 @@ const get_infrastructure = async (
 
 export const create = async (params?: IDParameters) => {
   const { vkp, reg, password } = await get_infrastructure(params)
-
-  reg.create(vkp, password)
+  return reg.create(vkp, password)
 }
 
-export const fuel = async (params?: IDParameters) => {
-  const { vkp, reg, password } = await get_infrastructure(params)
+export const fuel = async (amount: number, params?: IDParameters) => {
+  const { vkp, password } = await get_infrastructure(params)
+  const publicKey = vkp.getPublicKey({
+    derivationPath: JolocomLib.KeyTypes.ethereumKey,
+    encryptionPass: password
+  })
 
-  JolocomLib.util.fuelKeyWithEther(
-    vkp.getPublicKey({
-      derivationPath: JolocomLib.KeyTypes.ethereumKey,
-      encryptionPass: password
-    })
-  )
+  return params.dep
+    ? fuelAddress(
+        getStaxEndpoints(params.dep.endpoint).userInfoEndpoint,
+        publicKeyToAddress(publicKey),
+        httpAgent,
+        amount
+      ).then(txHash =>
+        awaitPaymentTxConfirmation(getStaxEndpoints(params.dep.endpoint).paymentEndpoint, txHash, httpAgent)
+      )
+    : JolocomLib.util.fuelKeyWithEther(publicKey)
 }
 
 export const Controller = async (params?: IDParameters) => {
@@ -98,27 +99,29 @@ export const Controller = async (params?: IDParameters) => {
   var interactions: {}
   const dir = __dirname + '/interactions/' + idw.did.slice(10, 30)
   try {
-    interactions = JSON.parse(
-      fs.readFileSync(dir + '/interactions.json', 'utf8')
-    )
+    interactions = JSON.parse(fs.readFileSync(dir + '/interactions.json', 'utf8'))
   } catch {
     interactions = {}
   }
 
+  type DidInfo = {
+    did: string
+    created: Date
+  }
+
   return {
-    getDid: (): string => {
-      return idw.did
+    getDidInfo: (): DidInfo => {
+      return {
+        did: idw.did,
+        created: idw.didDocument.created
+      }
     },
     clearInteractions: (): void => {
       interactions = {}
     },
     generateRequest: async (typ: string, attrs: any): Promise<string> => {
       if (!attrCheck.request[typ](attrs)) {
-        return (
-          'Error: Incorrect token attribute form for interaction type ' +
-          typ +
-          ' request'
-        )
+        return 'Error: Incorrect token attribute form for interaction type ' + typ + ' request'
       }
       try {
         const token = await tokens.request[typ](attrs, password)
@@ -159,38 +162,23 @@ export const Controller = async (params?: IDParameters) => {
 
       return { nameCred, emailCred }
     },
-    generateResponse: async (
-      typ: string,
-      attrs: any,
-      recieved?: string
-    ): Promise<string> => {
+    generateResponse: async (typ: string, attrs: any, recieved?: string): Promise<string> => {
       if (!attrCheck.response[typ](attrs)) {
-        return (
-          'Error: Incorrect token attribute form for interaction type ' +
-          typ +
-          ' response'
-        )
+        return 'Error: Incorrect token attribute form for interaction type ' + typ + ' response'
       }
       try {
-        const token = await tokens.response[typ](
-          attrs,
-          password,
-          JolocomLib.parse.interactionToken.fromJWT(recieved)
-        )
+        const token = await tokens.response[typ](attrs, password, JolocomLib.parse.interactionToken.fromJWT(recieved))
         return token.encode()
       } catch (error) {
         return 'Error: Malformed Invokation: ' + error
       }
     },
-    isInteractionResponseValid: async (
-      response: string
-    ): Promise<{ responder: string; validity: boolean }> => {
+    isInteractionResponseValid: async (response: string): Promise<{ responder: string; validity: boolean }> => {
       const resp = JolocomLib.parse.interactionToken.fromJWT(response)
-      const req = JolocomLib.parse.interactionToken.fromJSON(
-        interactions[resp.nonce]
-      )
+      const req = JolocomLib.parse.interactionToken.fromJSON(interactions[resp.nonce])
+
       try {
-        await idw.validateJWT(resp, req)
+        await idw.validateJWT(resp, req, reg)
         delete interactions[resp.nonce]
         return { responder: keyIdToDid(resp.issuer), validity: true }
       } catch (err) {
@@ -199,18 +187,10 @@ export const Controller = async (params?: IDParameters) => {
     },
     close: () => {
       try {
-        fs.writeFileSync(
-          dir + '/interactions.json',
-          JSON.stringify(interactions),
-          'utf8'
-        )
+        fs.writeFileSync(dir + '/interactions.json', JSON.stringify(interactions), 'utf8')
       } catch {
         fs.mkdirSync(dir, { recursive: true })
-        fs.writeFileSync(
-          dir + '/interactions.json',
-          JSON.stringify(interactions),
-          'utf8'
-        )
+        fs.writeFileSync(dir + '/interactions.json', JSON.stringify(interactions), 'utf8')
       }
     }
   }
