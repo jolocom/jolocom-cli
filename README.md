@@ -1,68 +1,111 @@
-# jolocom-cli
-Jolocom-cli is a cli tool to interact with/as a jolocom self-sovereign identity.
+## Intro:  
 
-## Installation:
-Simply run `npm install -g jolocom-cli`
 
-Alternatively, for a local installation, run `npm run prepare` to transpile and then `node cli.js` in place of `jolocom-cli` for any command.
+Jolocom-cli is a simple tool for interacting with the Jolocom identity infrastructure from the command line. Please note that currently only a subset of the APIs exposed by the Jolocom Library are supporter. 
 
-## Usage
-Usage information can be found with the -h flag.
+The following sections will show how to use the provided tool to anchor a new identity and issue authentication / payment requests. We will also look at a quick example of broadcasting the generated requests to the SmartWallet using deep linking.
 
-Example usage:
-- get the did of the local identity:
-`jolocom-cli did`
+## Setting up the CLI:
 
-- get the did of an identity created with seed b and password b (the seed should be a 64 digit hex integer):
-`jolocom-cli did -i a,b`
+First, install the CLI tool, either locally or globally:
 
-- register/anchor a did
-`jolocom-cli create -i a, b`
+    npm install -g jolocom-cli
 
-- generate an authentication request with callback URL http://www.google.com using identity a,b:
-`jolocom-cli generate auth request "{\"callbackURL\": \"http://www.google.com\"}" -i a,b`
+At this point you can already start using it as described in the next sections. For all request signatures a default identity will be used (not recommended for production obviously, but will work for testing). In case you want to create a custom identity you need to provide a custom 32 byte hex encoded seed using the **-i** flag, for example:
 
-- generate an authentication response to the above request with identity c,d:
-`jolocom-cli generate auth response "{\"callbackURL\": \"http://www.google.com\"}" {requestJWT} -i c,d`
+    jolocom-cli <command> -i "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
 
-- validate the authentication response generated above with a,b:
-`jolocom-cli validate <JWT> -i a,b`
+If you actually try to run a command, you'll most likely get the following error:  
 
-- use custom [STAX](https://laboratories.telekom.com/blockchain/) deployment with endpoint and registry contract address:
-`jolocom-cli {command} -s "https://example.endpoint.com",0xyourcontractaddr`
 
-## Interaction Types and Attributes
-The interaction types consist of:
-- auth: Authentication
-- offer: Credential Offer
-- share: Credential Share
-- payment: Payment
+> current identity is not anchored
 
-The Attributes these types require are all in JSON form and are specified in their [typings file](https://github.com/jolocom/jolocom-lib/blob/master/ts/interactionTokens/interactionTokens.types.ts)
+This is because the identity was not yet registered on the ledger. To register it, first fuel the key with some Ether to pay for the transaction:
 
-## Full API
-```
-jolocom-cli -h
-Usage: jolocom-cli [options] [command]
+    jolocom-cli fuel -i "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
 
-Options:
-  -V, --version                                 output the version number
-  -i, --identity <seed>,<password>              choose an identity corrosponding to the seed (64 digit hex) and password in list form: seed,password
-  -s, --stax <endpoint>,<contract>              use a Telekom STAX deployment in place of Ethereum and IPFS, with an endpoint and a contract address
-  -h, --help                                    output usage information
+And after the key has been fueled, anchor it:
 
-Commands:
-  did                                           Get basic info (did) for this identity
-  create                                        Creates an identity. If already existant, this fails silently.
-  fuel                                          Fuels an identity with some Eth. Will be deprecated upon main net.
-  clear                                         Clears the stored history of generated request tokens which are used for response validation.
-  generate <type> <reqresp> <attrs> [recieved]  Generate a request or response JWT of any type with attributes in json form. For a response, the optional recieved param is the request
-  validate <response>                           Validate a JWT given in response to an interaction request
-  ```
+    jolocom-cli create -i "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
 
-## Notes
-- The generated requests are JWT encoded and signed.
-- Likewise, the validate command also expects an encoded and signed JWT as input.
-- The seed and password options are not required, however without them the tool will default to a single identity for every user.
-- In future, the tool will detect the presence of a secure hardware element to gather entropy from, making the default identity different for each machine.
-- Support for (signed) credential creation is planned for a future release
+At this point you can test if it was anchored correctly using:
+
+    jolocom-cli did -i "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+
+    did: did:jolo:6b8e4245e9863a976b475b7a7c1dc70e290c9fbf0de9eec751d821944658b564
+    created: 2019-04-22T10:09:28.863Z
+
+---
+
+
+# Creating interaction requests:
+
+## Authentication:
+
+The route for authentication is:
+
+    jolocomwallet://authenticate/<JWT>
+
+We can generate an authentication request for testing using  the CLI tool:
+
+    jolocom-cli request auth "https://callback.com"
+
+In the example above, a JWT is created with the specified callback url. The JWT is signed by the staX identity. In order to resolve the staX identity we provide the deployment info (the endpoint of the staX deployment + identity contract address) using the **-s** flag.
+
+This JWT can be sent to the device on the previously mentioned route, for example by using:
+
+    adb shell am start -a android.intent.action.VIEW -d jolocomwallet://authenticate/<JWT>
+
+Further info about the accepted options is available if you run
+
+    jolocom-cli request auth --help
+
+    #Output:
+
+    Usage: jolocom-cli request auth <callbackURL> [description] [options...]
+
+    Positionals:
+      callbackURL  - url to which the client should send the response        [string] [required]
+      description  - additional description to render on the client device   [string]
+
+    Options:
+      --help          Show help  [boolean]
+      --version       Show version number  [boolean]
+      --staX, -s      Use custom staX deployment instead of public registry  [string]
+      --identity, -i  Provide custom 32 byte seed to generate identity keys  [string]
+
+As you can see, you can also pass an optional **description** that will be rendered on the SmartWallet, the **default text is "Authorize the transaction"**.
+
+In case you want to use a custom identity, you can specify it using the optional **-i** flag, for example:
+
+    jolocom-cli ... -i "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+
+32 hex encoded bytes for the seed are expected. If the **-i** flag is not present, **the default seed of **`aaa....aaa`** will be used. Please note that the custom identity has to be registered first as described in the first section.**
+
+## Payment:
+
+Please note that payment related interactions are **experimental** and are only to be used for **testing purposes**.
+
+The route for payment is 
+
+    jolocomwallet://payment/<JWT>
+
+We can generate a payment request for testing using  the CLI tool:
+
+    jolocom-cli request payment "https://c3378b68.ngrok.io" "Description of provided service" "0.5"
+
+In the example above, a JWT is created with the specified callback url, description, and amount (**0.5 Eth** in this case). T
+
+For usage info you can again run:
+
+    jolocom-cli request payment --help
+    
+    #Relevant output:
+    
+    Positionals:
+      callbackURL  - url to which the client will send the response                  [string] [required]
+      description  - additional description to render on the client device           [string] [required]
+      amount       - amount of Eth to transfer                                       [number] [required]
+      to           - receiver Ethereum address, defaults to current identity                    [string]
+
+Just like in the previous example, the **-i** flag can be used to specify a custom identity, although for testing the default one should do.
