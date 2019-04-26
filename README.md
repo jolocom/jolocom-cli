@@ -1,7 +1,7 @@
 ## Intro:  
 
 
-Jolocom-cli is a simple tool for interacting with the Jolocom identity infrastructure from the command line. Please note that currently only a subset of the APIs exposed by the Jolocom Library are supporter. 
+Jolocom-cli is a simple tool for interacting with the Jolocom identity infrastructure from the command line. Please note that currently only a subset of the APIs exposed by the Jolocom Library are supported. 
 
 The following sections will show how to use the provided tool to anchor a new identity and issue authentication / payment requests. We will also look at a quick example of broadcasting the generated requests to the SmartWallet using deep linking.
 
@@ -42,7 +42,7 @@ At this point you can test if it was anchored correctly using:
 
 ## Authentication:
 
-The route for authentication is:
+The deep link route for authentication on the Smartwallet App is:
 
     jolocomwallet://authenticate/<JWT>
 
@@ -86,7 +86,7 @@ In case you want to use a custom identity, you can specify it using the optional
 
 Please note that payment related interactions are **experimental** and are only to be used for **testing purposes**.
 
-The route for payment is 
+The deep link route for authentication on the Smartwallet App is:
 
     jolocomwallet://payment/<JWT>
 
