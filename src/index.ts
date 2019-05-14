@@ -224,6 +224,50 @@ require('yargs')
     () => {}
   )
 
+  .command(
+    'response',
+    'generate a JWT encoded interaction response',
+    yargs => {
+      yargs.command(
+        'auth <request> <callbackURL> [description]',
+        'generate a JWT auth response to the request',
+        yargs => {
+          yargs.usage('Usage: $0 response auth <request> <callbackURL> [description] [options...]')
+          yargs.positional('request', {
+            description: '- auth request to respond to',
+            type: 'string'
+          })
+
+          yargs.positional('callbackURL', {
+            description: '- url to which the client should send the response',
+            type: 'string'
+          })
+
+          yargs.positional('description', {
+            description: '- additional description to render on the client device',
+            type: 'string'
+          })
+        },
+        args =>
+          Controller({ idArgs: args.identity, dep: args.staX, offline: args.offline })
+            .then(async id => {
+              const attrs: AuthCreationArgs = {
+                callbackURL: args.callbackURL
+              }
+
+              if (args.description) attrs.description = args.description
+
+              console.log(await id.generateResponse('auth', attrs, args.request))
+                id.close()
+              })
+              .catch(err => {
+                console.log('current identity is not anchored')
+              })
+      )
+    },
+    () => {}
+  )
+
   .option('staX', {
     alias: 's',
     description: 'Use custom staX deployment instead of public registry',
