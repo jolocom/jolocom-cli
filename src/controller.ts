@@ -9,15 +9,19 @@ import axios from 'axios'
 import attrCheck from './validation'
 import { createJolocomRegistry } from 'jolocom-lib/js/registries/jolocomRegistry'
 import { ContractsAdapter } from 'jolocom-lib/js/contracts/contractsAdapter'
+import { Identity } from 'jolocom-lib/js/identity/identity'
 import { IVaultedKeyProvider } from 'jolocom-lib/js/vaultedKeyProvider/types'
-import { IRegistry } from 'jolocom-lib/js/registries/types'
+import { JolocomRegistry } from 'jolocom-lib/js/registries/jolocomRegistry'
 import { keyIdToDid, publicKeyToAddress } from 'jolocom-lib/js/utils/helper'
 import { awaitPaymentTxConfirmation, fuelAddress, getStaxEndpoints } from 'jolocom-lib-stax-connector/js/utils'
 import { HardwareKeyProvider } from 'hardware_key_provider'
+import { IdentityWallet } from 'jolocom-lib/js/identityWallet/identityWallet';
+import { DidDocument } from 'jolocom-lib/js/identity/didDocument/didDocument';
 
 interface IDParameters {
   idArgs?: { seed: Buffer; password: string }
   dep?: { endpoint: string; contract: string }
+  offline: boolean
 }
 
 const httpAgent = {
@@ -51,7 +55,7 @@ const get_vkp = (params?: IDParameters): IVaultedKeyProvider => {
 
 const get_infrastructure = (
   params?: IDParameters
-): { vkp: IVaultedKeyProvider; reg: IRegistry; password: string } => {
+): { vkp: IVaultedKeyProvider; reg: JolocomRegistry; password: string } => {
   return {
     vkp: get_vkp(params),
     reg: params && params.dep
@@ -100,10 +104,20 @@ export const fuel = async (amount: number, params?: IDParameters) => {
 
 export const Controller = async (params?: IDParameters) => {
   const { vkp, reg, password } = get_infrastructure(params)
-  const idw = await reg.authenticate(vkp, {
-    derivationPath: JolocomLib.KeyTypes.jolocomIdentityKey,
-    encryptionPass: password
-  })
+
+  const id = Identity.fromDidDocument({didDocument: DidDocument.fromPublicKey(vkp.getPublicKey({derivationPath: JolocomLib.KeyTypes.jolocomIdentityKey,
+                                                                                                  encryptionPass: password}))})
+  const idw = params.offline ? new IdentityWallet({identity: id,
+                                                   vaultedKeyProvider: vkp,
+                                                   publicKeyMetadata: {derivationPath: JolocomLib.KeyTypes.jolocomIdentityKey,
+                                                                       keyId: id.didDocument.publicKey[0].id},
+                                                   contractsAdapter: reg.contractsAdapter,
+                                                   contractsGateway: reg.contractsGateway})
+        : await reg.authenticate(vkp, {
+            derivationPath: JolocomLib.KeyTypes.jolocomIdentityKey,
+            encryptionPass: password
+        })
+
   const tokens = idw.create.interactionTokens
 
   var interactions: {}
@@ -142,11 +156,6 @@ export const Controller = async (params?: IDParameters) => {
       }
     },
     createKeyCloakCredentials: async (name: string, email: string) => {
-      const idw = await reg.authenticate(vkp, {
-        derivationPath: JolocomLib.KeyTypes.jolocomIdentityKey,
-        encryptionPass: password
-      })
-
       const nameCred = await idw.create.signedCredential(
         {
           metadata: claimsMetadata.name,
