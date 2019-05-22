@@ -17,7 +17,7 @@ require('yargs')
       yargs.usage('Usage: $0 did [options...]')
     },
     args =>
-      Controller({ idArgs: args.identity, dep: args.staX })
+      Controller({ idArgs: args.identity, dep: args.staX, offline: args.offline })
         .then(id => {
           const { did, created } = id.getDidInfo()
           console.log(`did: ${did}`)
@@ -40,7 +40,7 @@ require('yargs')
         default: 10
       })
     },
-    args => fuel(args.amount, { idArgs: args.identity, dep: args.staX })
+    args => fuel(args.amount, { idArgs: args.identity, dep: args.staX, offline: false })
   )
 
   .command(
@@ -49,7 +49,7 @@ require('yargs')
     yargs => {
       yargs.usage('Usage: $0 create [options...]')
     },
-    args => create({ idArgs: args.identity, dep: args.staX })
+    args => create({ idArgs: args.identity, dep: args.staX, offline: false })
   )
 
   .command(
@@ -59,7 +59,7 @@ require('yargs')
       yargs.usage('Usage: $0 clear')
     },
     args =>
-      Controller({ idArgs: args.identity, dep: args.staX })
+      Controller({ idArgs: args.identity, dep: args.staX, offline: true })
         .then(id => {
           id.clearInteractions()
           id.close()
@@ -80,7 +80,7 @@ require('yargs')
       })
     },
     args =>
-      Controller({ idArgs: args.identity, dep: args.staX })
+      Controller({ idArgs: args.identity, dep: args.staX, offline: false })
         .then(async id => {
           const { validity, responder } = await id.isInteractionResponseValid(args.response)
           console.log('valid:', validity)
@@ -113,10 +113,11 @@ require('yargs')
           default: 'scooter@dflow.demo'
         })
     },
-    ({ name, email, credentialRequest, identity, staX }) =>
+    ({ name, email, credentialRequest, identity, staX, offline }) =>
       Controller({
         idArgs: identity,
-        dep: staX
+        dep: staX,
+        offline: offline
       })
         .then(async id => {
           const { nameCred, emailCred } = await id.createKeyCloakCredentials(name, email)
@@ -161,7 +162,7 @@ require('yargs')
           })
         },
         args =>
-          Controller({ idArgs: args.identity, dep: args.staX })
+          Controller({ idArgs: args.identity, dep: args.staX, offline: args.offline })
             .then(async id => {
               const attrs: AuthCreationArgs = {
                 callbackURL: args.callbackURL
@@ -200,7 +201,7 @@ require('yargs')
           })
         },
         args =>
-          Controller({ idArgs: args.identity, dep: args.staX })
+          Controller({ idArgs: args.identity, dep: args.staX, offline: args.offline })
             .then(async id => {
               const attrs: PaymentRequestCreationArgs = {
                 callbackURL: args.callbackURL,
@@ -223,6 +224,50 @@ require('yargs')
     () => {}
   )
 
+  .command(
+    'response',
+    'generate a JWT encoded interaction response',
+    yargs => {
+      yargs.command(
+        'auth <request> <callbackURL> [description]',
+        'generate a JWT auth response to the request',
+        yargs => {
+          yargs.usage('Usage: $0 response auth <request> <callbackURL> [description] [options...]')
+          yargs.positional('request', {
+            description: '- auth request to respond to',
+            type: 'string'
+          })
+
+          yargs.positional('callbackURL', {
+            description: '- url to which the client should send the response',
+            type: 'string'
+          })
+
+          yargs.positional('description', {
+            description: '- additional description to render on the client device',
+            type: 'string'
+          })
+        },
+        args =>
+          Controller({ idArgs: args.identity, dep: args.staX, offline: args.offline })
+            .then(async id => {
+              const attrs: AuthCreationArgs = {
+                callbackURL: args.callbackURL
+              }
+
+              if (args.description) attrs.description = args.description
+
+              console.log(await id.generateResponse('auth', attrs, args.request))
+                id.close()
+              })
+              .catch(err => {
+                console.log('current identity is not anchored')
+              })
+      )
+    },
+    () => {}
+  )
+
   .option('staX', {
     alias: 's',
     description: 'Use custom staX deployment instead of public registry',
@@ -236,4 +281,11 @@ require('yargs')
     description: 'Provide custom 32 byte seed to generate identity keys',
     type: 'string',
     coerce: seed => ({ seed: Buffer.from(seed, 'hex'), password: 'secret' })
+  })
+
+  .option('offline', {
+    alias: 'o',
+    description: 'Run without network requests. Does not apply to fuel, create or validate',
+    type: 'boolean'
   }).argv
+
