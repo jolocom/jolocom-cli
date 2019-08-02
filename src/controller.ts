@@ -1,8 +1,8 @@
 import { JolocomLib, claimsMetadata } from 'jolocom-lib'
 import {
-  getStaxConfiguredContractsConnector,
-  getStaxConfiguredStorageConnector,
-  getStaxConfiguredContractsGateway
+    getStaxConfiguredContractsConnector,
+    getStaxConfiguredStorageConnector,
+    getStaxConfiguredContractsGateway
 } from 'jolocom-lib-stax-connector'
 import * as fs from 'fs'
 import axios from 'axios'
@@ -19,198 +19,215 @@ import { IdentityWallet } from 'jolocom-lib/js/identityWallet/identityWallet';
 import { DidDocument } from 'jolocom-lib/js/identity/didDocument/didDocument';
 
 interface IDParameters {
-  idArgs?: { seed: Buffer; password: string }
-  dep?: { endpoint: string; contract: string }
-  offline: boolean
+    idArgs?: { seed: Buffer; password: string }
+    dep?: { endpoint: string; contract: string }
+    offline: boolean
 }
 
 const httpAgent = {
-  getRequest: endpoint => {
-    return axios.get(endpoint).then(res => res.data)
-  },
+    getRequest: endpoint => {
+        return axios.get(endpoint).then(res => res.data)
+    },
 
-  postRequest: (endpoint, headers, data) => {
-    return axios.post(endpoint, data, { headers }).then(res => res.data)
-  },
+    postRequest: (endpoint, headers, data) => {
+        return axios.post(endpoint, data, { headers }).then(res => res.data)
+    },
 
-  headRequest: endpoint => {
-    return axios
-      .head(endpoint)
-      .then(res => res)
-      .catch(err => err)
-  }
+    headRequest: endpoint => {
+        return axios
+            .head(endpoint)
+            .then(res => res)
+            .catch(err => err)
+    }
+}
+
+export const isHardwareConnected = (): boolean => {
+    try {
+        const hkp = new HardwareKeyProvider();
+        return hkp ? true : false
+    } catch {
+        return false
+    }
 }
 
 const get_vkp = (params?: IDParameters): IVaultedKeyProvider => {
-  if (params && params.idArgs) {
-    return new JolocomLib.KeyProvider(params.idArgs.seed, params.idArgs.password);
-  }
+    if (params && params.idArgs) {
+        return new JolocomLib.KeyProvider(params.idArgs.seed, params.idArgs.password);
+    }
 
-  try {
-    return new HardwareKeyProvider();
-  } catch {
-    return new JolocomLib.KeyProvider(Buffer.from('a'.repeat(64), 'hex'), 'secret');
-  }
+    try {
+        return new HardwareKeyProvider();
+    } catch {
+        return new JolocomLib.KeyProvider(Buffer.from('a'.repeat(64), 'hex'), 'secret');
+    }
 }
 
 const get_infrastructure = (
-  params?: IDParameters
+    params?: IDParameters
 ): { vkp: IVaultedKeyProvider; reg: JolocomRegistry; password: string } => {
-  return {
-    vkp: get_vkp(params),
-    reg: params && params.dep
-      ? createJolocomRegistry({
-          ethereumConnector: getStaxConfiguredContractsConnector(
-            params.dep.endpoint,
-            params.dep.contract || '0x32dacb62d2fe618697f192cda3abc50426e5486c',
-            httpAgent
-          ),
-          ipfsConnector: getStaxConfiguredStorageConnector(params.dep.endpoint, httpAgent),
-          contracts: {
-            gateway: getStaxConfiguredContractsGateway(params.dep.endpoint, 777, httpAgent),
-            adapter: new ContractsAdapter(777)
-          }
-        })
-      : JolocomLib.registries.jolocom.create(),
-    password: params && params.idArgs
-      ? params.idArgs.password
-      : 'secret'
-  }
+    return {
+        vkp: get_vkp(params),
+        reg: params && params.dep
+            ? createJolocomRegistry({
+                ethereumConnector: getStaxConfiguredContractsConnector(
+                    params.dep.endpoint,
+                    params.dep.contract || '0x32dacb62d2fe618697f192cda3abc50426e5486c',
+                    httpAgent
+                ),
+                ipfsConnector: getStaxConfiguredStorageConnector(params.dep.endpoint, httpAgent),
+                contracts: {
+                    gateway: getStaxConfiguredContractsGateway(params.dep.endpoint, 777, httpAgent),
+                    adapter: new ContractsAdapter(777)
+                }
+            })
+            : JolocomLib.registries.jolocom.create(),
+        password: params && params.idArgs
+            ? params.idArgs.password
+            : 'secret'
+    }
 }
 
 export const create = async (params?: IDParameters) => {
-  const { vkp, reg, password } = get_infrastructure(params)
-  return reg.create(vkp, password)
+    const { vkp, reg, password } = get_infrastructure(params)
+    return reg.create(vkp, password)
 }
 
 export const fuel = async (amount: number, params?: IDParameters) => {
-  const { vkp, password } = get_infrastructure(params)
-  const publicKey = vkp.getPublicKey({
-    derivationPath: JolocomLib.KeyTypes.ethereumKey,
-    encryptionPass: password
-  })
+    const { vkp, password } = get_infrastructure(params)
+    const publicKey = vkp.getPublicKey({
+        derivationPath: JolocomLib.KeyTypes.ethereumKey,
+        encryptionPass: password
+    })
 
-  return params.dep
-    ? fuelAddress(
-        getStaxEndpoints(params.dep.endpoint).userInfoEndpoint,
-        publicKeyToAddress(publicKey),
-        httpAgent,
-        amount
-      ).then(txHash =>
-        awaitPaymentTxConfirmation(getStaxEndpoints(params.dep.endpoint).paymentEndpoint, txHash, httpAgent)
-      )
-    : JolocomLib.util.fuelKeyWithEther(publicKey)
+    return params.dep
+        ? fuelAddress(
+            getStaxEndpoints(params.dep.endpoint).userInfoEndpoint,
+            publicKeyToAddress(publicKey),
+            httpAgent,
+            amount
+        ).then(txHash =>
+            awaitPaymentTxConfirmation(getStaxEndpoints(params.dep.endpoint).paymentEndpoint, txHash, httpAgent)
+        )
+        : JolocomLib.util.fuelKeyWithEther(publicKey)
 }
 
 export const Controller = async (params?: IDParameters) => {
-  const { vkp, reg, password } = get_infrastructure(params)
+    const { vkp, reg, password } = get_infrastructure(params)
 
-  const id = Identity.fromDidDocument({didDocument: DidDocument.fromPublicKey(vkp.getPublicKey({derivationPath: JolocomLib.KeyTypes.jolocomIdentityKey,
-                                                                                                  encryptionPass: password}))})
-  const idw = params.offline ? new IdentityWallet({identity: id,
-                                                   vaultedKeyProvider: vkp,
-                                                   publicKeyMetadata: {derivationPath: JolocomLib.KeyTypes.jolocomIdentityKey,
-                                                                       keyId: id.didDocument.publicKey[0].id},
-                                                   contractsAdapter: reg.contractsAdapter,
-                                                   contractsGateway: reg.contractsGateway})
+    const id = Identity.fromDidDocument({
+        didDocument: DidDocument.fromPublicKey(vkp.getPublicKey({
+            derivationPath: JolocomLib.KeyTypes.jolocomIdentityKey,
+            encryptionPass: password
+        }))
+    })
+    const idw = params.offline ? new IdentityWallet({
+        identity: id,
+        vaultedKeyProvider: vkp,
+        publicKeyMetadata: {
+            derivationPath: JolocomLib.KeyTypes.jolocomIdentityKey,
+            keyId: id.didDocument.publicKey[0].id
+        },
+        contractsAdapter: reg.contractsAdapter,
+        contractsGateway: reg.contractsGateway
+    })
         : await reg.authenticate(vkp, {
             derivationPath: JolocomLib.KeyTypes.jolocomIdentityKey,
             encryptionPass: password
         })
 
-  const tokens = idw.create.interactionTokens
+    const tokens = idw.create.interactionTokens
 
-  var interactions: {}
-  const dir = __dirname + '/interactions/' + idw.did.slice(10, 30)
-  try {
-    interactions = JSON.parse(fs.readFileSync(dir + '/interactions.json', 'utf8'))
-  } catch {
-    interactions = {}
-  }
-
-  type DidInfo = {
-    did: string
-    created: Date
-  }
-
-  return {
-    getDidInfo: (): DidInfo => {
-      return {
-        did: idw.did,
-        created: idw.didDocument.created
-      }
-    },
-    clearInteractions: (): void => {
-      interactions = {}
-    },
-    generateRequest: async (typ: string, attrs: any): Promise<string> => {
-      if (!attrCheck.request[typ](attrs)) {
-        return 'Error: Incorrect token attribute form for interaction type ' + typ + ' request'
-      }
-      try {
-        const token = await tokens.request[typ](attrs, password)
-        interactions[token.nonce] = token
-        return token.encode()
-      } catch (error) {
-        return 'Error: Malformed Invokation: ' + error
-      }
-    },
-    createKeyCloakCredentials: async (name: string, email: string) => {
-      const nameCred = await idw.create.signedCredential(
-        {
-          metadata: claimsMetadata.name,
-          claim: {
-            familyName: name,
-            givenName: name
-          },
-          subject: idw.did
-        },
-        password
-      )
-
-      const emailCred = await idw.create.signedCredential(
-        {
-          metadata: claimsMetadata.emailAddress,
-          claim: {
-            email: email
-          },
-          subject: idw.did
-        },
-        password
-      )
-
-      return { nameCred, emailCred }
-    },
-    generateResponse: async (typ: string, attrs: any, recieved?: string): Promise<string> => {
-      if (!attrCheck.response[typ](attrs)) {
-        return 'Error: Incorrect token attribute form for interaction type ' + typ + ' response'
-      }
-      try {
-        const token = await tokens.response[typ](attrs, password, JolocomLib.parse.interactionToken.fromJWT(recieved))
-        return token.encode()
-      } catch (error) {
-        return 'Error: Malformed Invokation: ' + error
-      }
-    },
-    isInteractionResponseValid: async (response: string): Promise<{ responder: string; validity: boolean }> => {
-      const resp = JolocomLib.parse.interactionToken.fromJWT(response)
-      const req = JolocomLib.parse.interactionToken.fromJSON(interactions[resp.nonce])
-
-      try {
-        await idw.validateJWT(resp, req, reg)
-        delete interactions[resp.nonce]
-        return { responder: keyIdToDid(resp.issuer), validity: true }
-      } catch (err) {
-        return { responder: keyIdToDid(resp.issuer), validity: false }
-      }
-    },
-    close: () => {
-      try {
-        fs.writeFileSync(dir + '/interactions.json', JSON.stringify(interactions), 'utf8')
-      } catch {
-        fs.mkdirSync(dir, { recursive: true })
-        fs.writeFileSync(dir + '/interactions.json', JSON.stringify(interactions), 'utf8')
-      }
+    var interactions: {}
+    const dir = __dirname + '/interactions/' + idw.did.slice(10, 30)
+    try {
+        interactions = JSON.parse(fs.readFileSync(dir + '/interactions.json', 'utf8'))
+    } catch {
+        interactions = {}
     }
-  }
+
+    type DidInfo = {
+        did: string
+        created: Date
+    }
+
+    return {
+        getDidInfo: (): DidInfo => {
+            return {
+                did: idw.did,
+                created: idw.didDocument.created
+            }
+        },
+        clearInteractions: (): void => {
+            interactions = {}
+        },
+        generateRequest: async (typ: string, attrs: any): Promise<string> => {
+            if (!attrCheck.request[typ](attrs)) {
+                return 'Error: Incorrect token attribute form for interaction type ' + typ + ' request'
+            }
+            try {
+                const token = await tokens.request[typ](attrs, password)
+                interactions[token.nonce] = token
+                return token.encode()
+            } catch (error) {
+                return 'Error: Malformed Invokation: ' + error
+            }
+        },
+        createKeyCloakCredentials: async (name: string, email: string) => {
+            const nameCred = await idw.create.signedCredential(
+                {
+                    metadata: claimsMetadata.name,
+                    claim: {
+                        familyName: name,
+                        givenName: name
+                    },
+                    subject: idw.did
+                },
+                password
+            )
+
+            const emailCred = await idw.create.signedCredential(
+                {
+                    metadata: claimsMetadata.emailAddress,
+                    claim: {
+                        email: email
+                    },
+                    subject: idw.did
+                },
+                password
+            )
+
+            return { nameCred, emailCred }
+        },
+        generateResponse: async (typ: string, attrs: any, recieved?: string): Promise<string> => {
+            if (!attrCheck.response[typ](attrs)) {
+                return 'Error: Incorrect token attribute form for interaction type ' + typ + ' response'
+            }
+            try {
+                const token = await tokens.response[typ](attrs, password, JolocomLib.parse.interactionToken.fromJWT(recieved))
+                return token.encode()
+            } catch (error) {
+                return 'Error: Malformed Invokation: ' + error
+            }
+        },
+        isInteractionResponseValid: async (response: string): Promise<{ responder: string; validity: boolean }> => {
+            const resp = JolocomLib.parse.interactionToken.fromJWT(response)
+            const req = JolocomLib.parse.interactionToken.fromJSON(interactions[resp.nonce])
+
+            try {
+                await idw.validateJWT(resp, req, reg)
+                delete interactions[resp.nonce]
+                return { responder: keyIdToDid(resp.issuer), validity: true }
+            } catch (err) {
+                return { responder: keyIdToDid(resp.issuer), validity: false }
+            }
+        },
+        close: () => {
+            try {
+                fs.writeFileSync(dir + '/interactions.json', JSON.stringify(interactions), 'utf8')
+            } catch {
+                fs.mkdirSync(dir, { recursive: true })
+                fs.writeFileSync(dir + '/interactions.json', JSON.stringify(interactions), 'utf8')
+            }
+        }
+    }
 }
