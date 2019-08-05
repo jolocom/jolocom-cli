@@ -1,6 +1,6 @@
 {
   "name": "jolocom-cli",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "files": [
     "cli.js",
     "dist/*.js"
