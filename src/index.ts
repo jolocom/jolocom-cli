@@ -24,7 +24,7 @@ require('yargs')
                     console.log(`created: ${created.toISOString()}`)
                 })
                 .catch(err => {
-                    console.log('current identity is not anchored')
+                    console.log(err)
                 })
     )
 
@@ -65,7 +65,7 @@ require('yargs')
                     id.close()
                 })
                 .catch(err => {
-                    console.log('current identity is not anchored')
+                    console.log(err)
                 })
     )
 
@@ -96,7 +96,7 @@ require('yargs')
                     id.close()
                 })
                 .catch(err => {
-                    console.log('current identity is not anchored')
+                    console.log(err)
                 })
     )
 
@@ -146,7 +146,7 @@ require('yargs')
                     id.close()
                 })
                 .catch(err => {
-                    console.log('current identity is not anchored')
+                    console.log(err)
                 })
     )
 
@@ -182,7 +182,7 @@ require('yargs')
                             id.close()
                         })
                         .catch(err => {
-                            console.log('current identity is not anchored')
+                            console.log(err)
                         })
             )
             yargs.command(
@@ -225,7 +225,7 @@ require('yargs')
                             id.close()
                         })
                         .catch(err => {
-                            console.log('current identity is not anchored')
+                            console.log(err)
                         })
             )
         },
@@ -269,7 +269,7 @@ require('yargs')
                             id.close()
                         })
                         .catch(err => {
-                            console.log('current identity is not anchored')
+                            console.log(err)
                         })
             )
         },
