@@ -6,6 +6,11 @@ import * as yargs from 'yargs'
 
 const ethToWei = n => n * 1e18
 
+const debugMsg = (msg: string, debug: boolean): string =>
+    debug ?
+        msg :
+        "current identity is not anchored"
+
 require('yargs')
     .scriptName('jolocom-cli')
     .wrap(yargs.terminalWidth())
@@ -23,9 +28,7 @@ require('yargs')
                     console.log(`did: ${did}`)
                     console.log(`created: ${created.toISOString()}`)
                 })
-                .catch(err => {
-                    console.log('current identity is not anchored')
-                })
+                .catch(err => console.log(debugMsg(err, args.debug)))
     )
 
     .command(
@@ -41,6 +44,7 @@ require('yargs')
             })
         },
         args => fuel(args.amount, { idArgs: args.identity, dep: args.staX, offline: false })
+            .catch(err => console.log(debugMsg(err, args.debug)))
     )
 
     .command(
@@ -65,7 +69,7 @@ require('yargs')
                     id.close()
                 })
                 .catch(err => {
-                    console.log('current identity is not anchored')
+                    console.log(debugMsg(err, args.debug))
                 })
     )
 
@@ -96,7 +100,7 @@ require('yargs')
                     id.close()
                 })
                 .catch(err => {
-                    console.log('current identity is not anchored')
+                    console.log(debugMsg(err, args.debug))
                 })
     )
 
@@ -121,7 +125,7 @@ require('yargs')
                     default: 'scooter@dflow.demo'
                 })
         },
-        ({ name, email, credentialRequest, identity, staX, offline }) =>
+        ({ name, email, credentialRequest, identity, staX, offline, debug }) =>
             Controller({
                 idArgs: identity,
                 dep: staX,
@@ -145,9 +149,7 @@ require('yargs')
                     id.clearInteractions()
                     id.close()
                 })
-                .catch(err => {
-                    console.log('current identity is not anchored')
-                })
+                .catch(err => console.log(debugMsg(err, debug)))
     )
 
     .command(
@@ -182,7 +184,7 @@ require('yargs')
                             id.close()
                         })
                         .catch(err => {
-                            console.log('current identity is not anchored')
+                            console.log(debugMsg(err, args.debug))
                         })
             )
             yargs.command(
@@ -225,7 +227,7 @@ require('yargs')
                             id.close()
                         })
                         .catch(err => {
-                            console.log('current identity is not anchored')
+                            console.log(debugMsg(err, args.debug))
                         })
             )
         },
@@ -269,7 +271,7 @@ require('yargs')
                             id.close()
                         })
                         .catch(err => {
-                            console.log('current identity is not anchored')
+                            console.log(debugMsg(err, args.debug))
                         })
             )
         },
@@ -295,4 +297,12 @@ require('yargs')
         alias: 'o',
         description: 'Run without network requests. Does not apply to fuel, create or validate',
         type: 'boolean'
-    }).argv
+    })
+
+    .option('debug', {
+        alias: 'd',
+        description: 'Print full error messages',
+        type: 'boolean'
+    })
+
+    .argv
