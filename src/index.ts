@@ -28,9 +28,7 @@ require('yargs')
                     console.log(`did: ${did}`)
                     console.log(`created: ${created.toISOString()}`)
                 })
-                .catch(err => {
-                    console.log(debugMsg(err, args.debug))
-                })
+                .catch(err => console.log(debugMsg(err, args.debug)))
     )
 
     .command(
@@ -46,6 +44,7 @@ require('yargs')
             })
         },
         args => fuel(args.amount, { idArgs: args.identity, dep: args.staX, offline: false })
+            .catch(err => console.log(debugMsg(err, args.debug)))
     )
 
     .command(
@@ -126,7 +125,7 @@ require('yargs')
                     default: 'scooter@dflow.demo'
                 })
         },
-        ({ name, email, credentialRequest, identity, staX, offline }) =>
+        ({ name, email, credentialRequest, identity, staX, offline, debug }) =>
             Controller({
                 idArgs: identity,
                 dep: staX,
@@ -150,9 +149,7 @@ require('yargs')
                     id.clearInteractions()
                     id.close()
                 })
-                .catch(err => {
-                    console.log(debugMsg(err, args.debug))
-                })
+                .catch(err => console.log(debugMsg(err, debug)))
     )
 
     .command(
