@@ -17,6 +17,12 @@ import { awaitPaymentTxConfirmation, fuelAddress, getStaxEndpoints } from 'joloc
 import { HardwareKeyProvider } from 'hardware_key_provider'
 import { IdentityWallet } from 'jolocom-lib/js/identityWallet/identityWallet';
 import { DidDocument } from 'jolocom-lib/js/identity/didDocument/didDocument';
+import { MultiResolver, createValidatingResolver, createJolocomResolver, multiResolver } from 'jolocom-lib/js/resolver';
+import { jolocomEthereumResolver } from 'jolocom-lib/js/ethereum/ethereum';
+import { jolocomIpfsStorageAgent } from 'jolocom-lib/js/ipfs/ipfs';
+import { noValidation } from 'jolocom-lib/js/validation/validation'
+import { publicKeyToDID, sha256 } from 'jolocom-lib/js/utils/crypto';
+
 
 const defaultPass = 'a'.repeat(32)
 
@@ -64,28 +70,53 @@ const get_vkp = (params?: IDParameters): IVaultedKeyProvider => {
     }
 }
 
-const get_infrastructure = (
-    params?: IDParameters
-): { vkp: IVaultedKeyProvider; reg: JolocomRegistry; password: string } => {
+const get_backend = (dep?: { endpoint: string, contract: string }): { reg: JolocomRegistry, mRes: MultiResolver } => {
+    if (!dep) return { reg: JolocomLib.registries.jolocom.create(), mRes: multiResolver }
+
+    const ethConn = getStaxConfiguredContractsConnector(
+        dep.endpoint,
+        dep.contract,
+        httpAgent
+    )
+
+    const ipfsConn = getStaxConfiguredStorageConnector(
+        dep.endpoint,
+        httpAgent
+    )
+
+    const staxRes = createValidatingResolver(createJolocomResolver(ethConn, ipfsConn), noValidation)
+
     return {
-        vkp: get_vkp(params),
-        reg: params && params.dep
-            ? createJolocomRegistry({
-                ethereumConnector: getStaxConfiguredContractsConnector(
-                    params.dep.endpoint,
-                    params.dep.contract || '0x32dacb62d2fe618697f192cda3abc50426e5486c',
+        reg: createJolocomRegistry({
+            ethereumConnector: ethConn,
+            ipfsConnector: ipfsConn,
+            contracts: {
+                gateway: getStaxConfiguredContractsGateway(
+                    dep.endpoint,
+                    777,
                     httpAgent
                 ),
-                ipfsConnector: getStaxConfiguredStorageConnector(params.dep.endpoint, httpAgent),
-                contracts: {
-                    gateway: getStaxConfiguredContractsGateway(params.dep.endpoint, 777, httpAgent),
-                    adapter: new ContractsAdapter(777)
-                }
-            })
-            : JolocomLib.registries.jolocom.create(),
+                adapter: new ContractsAdapter(777)
+            },
+            didBuilder: publicKeyToDID('stax')(sha256),
+            didResolver: staxRes
+        }),
+        mRes: new MultiResolver({
+            jolo: createValidatingResolver(createJolocomResolver(jolocomEthereumResolver, jolocomIpfsStorageAgent), noValidation),
+            stax: staxRes
+        })
+    }
+}
+
+const get_infrastructure = (
+    params?: IDParameters
+): { vkp: IVaultedKeyProvider; reg: JolocomRegistry; password: string, mRes: MultiResolver } => {
+    return {
+        vkp: get_vkp(params),
         password: params && params.idArgs
             ? params.idArgs.password
-            : defaultPass
+            : defaultPass,
+        ...get_backend(params && params.dep)
     }
 }
 
@@ -114,7 +145,7 @@ export const fuel = async (amount: number, params?: IDParameters) => {
 }
 
 export const Controller = async (params?: IDParameters) => {
-    const { vkp, reg, password } = get_infrastructure(params)
+    const { vkp, reg, password, mRes } = get_infrastructure(params)
 
     const id = Identity.fromDidDocument({
         didDocument: DidDocument.fromPublicKey(vkp.getPublicKey({
@@ -216,7 +247,7 @@ export const Controller = async (params?: IDParameters) => {
             const req = JolocomLib.parse.interactionToken.fromJSON(interactions[resp.nonce])
 
             try {
-                await idw.validateJWT(resp, req)
+                await idw.validateJWT(resp, req, mRes)
                 delete interactions[resp.nonce]
                 return { responder: keyIdToDid(resp.issuer), validity: true }
             } catch (err) {
