@@ -18,6 +18,8 @@ import { HardwareKeyProvider } from 'hardware_key_provider'
 import { IdentityWallet } from 'jolocom-lib/js/identityWallet/identityWallet';
 import { DidDocument } from 'jolocom-lib/js/identity/didDocument/didDocument';
 
+const defaultPass = 'a'.repeat(32)
+
 interface IDParameters {
     idArgs?: { seed: Buffer; password: string }
     dep?: { endpoint: string; contract: string }
@@ -52,13 +54,13 @@ export const isHardwareConnected = (): boolean => {
 
 const get_vkp = (params?: IDParameters): IVaultedKeyProvider => {
     if (params && params.idArgs) {
-        return new JolocomLib.KeyProvider(params.idArgs.seed, params.idArgs.password);
+        return JolocomLib.KeyProvider.fromSeed(params.idArgs.seed, params.idArgs.password);
     }
 
     try {
         return new HardwareKeyProvider();
     } catch {
-        return new JolocomLib.KeyProvider(Buffer.from('a'.repeat(64), 'hex'), 'secret');
+        return JolocomLib.KeyProvider.fromSeed(Buffer.from('a'.repeat(64), 'hex'), defaultPass);
     }
 }
 
@@ -83,7 +85,7 @@ const get_infrastructure = (
             : JolocomLib.registries.jolocom.create(),
         password: params && params.idArgs
             ? params.idArgs.password
-            : 'secret'
+            : defaultPass
     }
 }
 
@@ -214,7 +216,7 @@ export const Controller = async (params?: IDParameters) => {
             const req = JolocomLib.parse.interactionToken.fromJSON(interactions[resp.nonce])
 
             try {
-                await idw.validateJWT(resp, req, reg)
+                await idw.validateJWT(resp, req)
                 delete interactions[resp.nonce]
                 return { responder: keyIdToDid(resp.issuer), validity: true }
             } catch (err) {
