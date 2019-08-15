@@ -1964,10 +1964,10 @@ isurl@^1.0.0-alpha5:
     has-to-string-tag-x "^1.2.0"
     is-object "^1.0.1"
 
-jolocom-lib-stax-connector@^0.3.1:
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/jolocom-lib-stax-connector/-/jolocom-lib-stax-connector-0.3.1.tgz#84792d4e5ff4ac8f1c4a637b2f5fee212d5a1f9c"
-  integrity sha512-3BkYSja7ccwhXNmKI0XOxhnIhuoA6yd69zkv7Jm7tFT2lf+Tp+9D/dndR14ZNkkSCQdsy3Y8UhF1jczgdz9CAw==
+jolocom-lib-stax-connector@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/jolocom-lib-stax-connector/-/jolocom-lib-stax-connector-0.4.0.tgz#17de05f3ba734d8485faab507b7d3961613f8d4b"
+  integrity sha512-Mg059d/K+Dwh/QZy3fRQCyuJ++FkEkPS8oTREKzV0f5ft8GiDF5zpDSoJlM/mDIq3AzpjG4zjplKfUrowNX3Ng==
   dependencies:
     "@types/sinon" "^7.0.11"
     ethereumjs-abi "^0.6.7"
