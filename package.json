@@ -3,8 +3,7 @@
   "version": "1.8.1",
   "files": [
     "cli.js",
-    "dist/*.js",
-    "./jolocom-lib-v3.0.0.tgz"
+    "dist/*.js"
   ],
   "description": "CLI interface for a Jolocom Self Sovereign Identity",
   "main": "cli.js",
@@ -20,7 +19,7 @@
   "dependencies": {
     "axios": "^0.18.0",
     "hardware_key_provider": "^0.4.8",
-    "jolocom-lib": "./jolocom-lib-v3.0.0.tgz",
+    "jolocom-lib": "^4.0.0-beta.0",
     "jolocom-lib-stax-connector": "^0.4.0",
     "typedarray-to-buffer": "^3.1.5",
     "yargs": "^13.2.2"
