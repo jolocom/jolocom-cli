@@ -3,7 +3,8 @@
   "version": "1.8.0",
   "files": [
     "cli.js",
-    "dist/*.js"
+    "dist/*.js",
+    "./jolocom-lib-v3.0.0.tgz"
   ],
   "description": "CLI interface for a Jolocom Self Sovereign Identity",
   "main": "cli.js",
