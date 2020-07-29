@@ -1,8 +1,8 @@
 import { Controller, create, fuel, isHardwareConnected } from './controller'
 import { JolocomLib } from 'jolocom-lib'
 import { CredentialRequest } from 'jolocom-lib/js/interactionTokens/credentialRequest'
-import { AuthCreationArgs, PaymentRequestCreationArgs } from 'jolocom-lib/js/identityWallet/types'
 import * as yargs from 'yargs'
+import { Authentication } from 'jolocom-lib/js/interactionTokens/authentication'
 
 const ethToWei = n => n * 1e18
 
@@ -174,11 +174,10 @@ require('yargs')
                 args =>
                     Controller({ idArgs: args.identity, dep: args.staX, offline: args.offline })
                         .then(async id => {
-                            const attrs: AuthCreationArgs = {
-                                callbackURL: args.callbackURL
+                            const attrs = {
+                                callbackURL: args.callbackURL,
+                                description: args.description || ''
                             }
-
-                            if (args.description) attrs.description = args.description
 
                             console.log(await id.generateRequest('auth', attrs))
                             id.close()
@@ -213,15 +212,14 @@ require('yargs')
                 args =>
                     Controller({ idArgs: args.identity, dep: args.staX, offline: args.offline })
                         .then(async id => {
-                            const attrs: PaymentRequestCreationArgs = {
+                            const attrs = {
                                 callbackURL: args.callbackURL,
                                 description: args.description,
                                 transactionOptions: {
                                     value: args.amount
-                                }
+                                },
+                                to: args.to
                             }
-
-                            if (args.to) attrs.transactionOptions.to = args.to
 
                             console.log(await id.generateRequest('payment', attrs))
                             id.close()
@@ -261,11 +259,11 @@ require('yargs')
                 args =>
                     Controller({ idArgs: args.identity, dep: args.staX, offline: args.offline })
                         .then(async id => {
-                            const attrs: AuthCreationArgs = {
-                                callbackURL: args.callbackURL
+                            const attrs = {
+                                callbackURL: args.callbackURL,
+                                description: args.description || ''
                             }
 
-                            if (args.description) attrs.description = args.description
 
                             console.log(await id.generateResponse('auth', attrs, args.request))
                             id.close()

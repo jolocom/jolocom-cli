@@ -1,13 +1,3 @@
-import {
-  CredentialShareRequestCreationArgs,
-  CredentialShareResponseCreationArgs,
-  CredentialOfferRequestCreationArgs,
-  PaymentRequestCreationArgs,
-  CredentialOfferResponseCreationArgs,
-  PaymentResponseCreationArgs,
-  AuthCreationArgs
-} from 'jolocom-lib/js/identityWallet/types'
-
 const hasElOfType = (attrs: any, el: string, typ: string): boolean => {
   return attrs && attrs[el] && typeof attrs[el] === typ
 }
@@ -20,29 +10,29 @@ const hasCallback = (attrs: any): boolean => {
   return hasElOfType(attrs, 'callbackURL', 'string')
 }
 
-const isAuth = (attrs: any): attrs is AuthCreationArgs => {
+const isAuth = (attrs: any) => {
   return hasCallback(attrs) && optionalElOfType(attrs, 'description', 'string')
 }
 
-const isCredShareReq = (attrs: any): attrs is CredentialShareRequestCreationArgs => {
+const isCredShareReq = (attrs: any) => {
   return hasCallback(attrs) && hasElOfType(attrs, 'credentialRequirements', 'object')
 }
 
-const isCredShareResp = (attrs: any): attrs is CredentialShareResponseCreationArgs => {
+const isCredShareResp = (attrs: any) => {
   return hasCallback(attrs) && hasElOfType(attrs, 'suppliedCredentials', 'object')
 }
 
-const isCredOfferReq = (attrs: any): attrs is CredentialOfferRequestCreationArgs => {
+const isCredOfferReq = (attrs: any) => {
   return (
     hasCallback(attrs) && hasElOfType(attrs, 'instant', 'boolean') && hasElOfType(attrs, 'requestedInput', 'object')
   )
 }
 
-const isCredOfferResp = (attrs: any): attrs is CredentialOfferResponseCreationArgs => {
+const isCredOfferResp = (attrs: any) => {
   return hasElOfType(attrs, 'signedCredentials', 'object')
 }
 
-const isPaymentReq = (attrs: any): attrs is PaymentRequestCreationArgs => {
+const isPaymentReq = (attrs: any) => {
   return (
     hasCallback(attrs) &&
     hasElOfType(attrs, 'description', 'string') &&
@@ -51,7 +41,7 @@ const isPaymentReq = (attrs: any): attrs is PaymentRequestCreationArgs => {
   )
 }
 
-const isPaymentResp = (attrs: any): attrs is PaymentResponseCreationArgs => {
+const isPaymentResp = (attrs: any) => {
   return hasElOfType(attrs, 'txHash', 'string')
 }
 
