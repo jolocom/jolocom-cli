@@ -17,7 +17,7 @@
   "author": "charles cunningham",
   "license": "ISC",
   "dependencies": {
-    "axios": "^0.18.0",
+    "axios": "^0.21.1",
     "hardware_key_provider": "^0.4.8",
     "jolocom-lib": "^4.2.8",
     "jolocom-lib-stax-connector": "^0.3.1",
